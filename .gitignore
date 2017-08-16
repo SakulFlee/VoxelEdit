@@ -1,0 +1,15 @@
+# Gradle
+.gradle/
+
+# IDEA
+.idea/
+!.idea/runConfigurations
+*.iml
+
+# Server
+server/
+libs/
+
+# Build
+build/
+out/

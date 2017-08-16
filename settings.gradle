@@ -1,0 +1,4 @@
+rootProject.name = 'VoxelEdit'
+
+include ':Framework'
+project(':Framework').projectDir = new File("../Framework")
