@@ -12,11 +12,13 @@ import org.bukkit.plugin.java.JavaPlugin
 @Plugin("FrameworkTestPlugin", "@Sakul6499", "Test")
 class ServerPlugin {
 
-    private lateinit var javaPlugin: JavaPlugin
+    companion object {
+        lateinit var javaPlugin: JavaPlugin
+    }
 
     @Init
     fun initialize(javaPlugin: JavaPlugin) {
-        this.javaPlugin = javaPlugin
+        ServerPlugin.javaPlugin = javaPlugin
     }
 
     @Startup
