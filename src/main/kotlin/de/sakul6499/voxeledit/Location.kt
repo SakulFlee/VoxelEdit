@@ -1,4 +1,4 @@
-package de.sakul6499
+package de.sakul6499.voxeledit
 
 import org.bukkit.util.Vector
 import java.util.*

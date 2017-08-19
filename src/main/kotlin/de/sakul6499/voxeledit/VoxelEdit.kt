@@ -1,4 +1,4 @@
-package de.sakul6499
+package de.sakul6499.voxeledit
 
 import de.framework.logger.Logger
 import de.framework.plugin.api.Init
@@ -10,7 +10,7 @@ import org.bukkit.command.CommandMap
 import org.bukkit.plugin.java.JavaPlugin
 
 @Plugin("FrameworkTestPlugin", "@Sakul6499", "Test")
-class ServerPlugin {
+class VoxelEdit {
 
     companion object {
         lateinit var javaPlugin: JavaPlugin
@@ -18,7 +18,7 @@ class ServerPlugin {
 
     @Init
     fun initialize(javaPlugin: JavaPlugin) {
-        ServerPlugin.javaPlugin = javaPlugin
+        Companion.javaPlugin = javaPlugin
     }
 
     @Startup

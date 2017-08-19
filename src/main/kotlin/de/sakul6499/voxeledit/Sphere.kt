@@ -1,6 +1,4 @@
-package de.sakul6499
-
-import org.bukkit.util.Vector
+package de.sakul6499.voxeledit
 
 /**
  * # Sphere
