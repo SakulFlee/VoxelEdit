@@ -10,6 +10,7 @@ object VEMode : Listener {
 
     private val inMode: MutableList<Player> = mutableListOf()
 
+    @Suppress("UNUSED")
     @EventHandler
     fun onChat(event: AsyncPlayerChatEvent) {
         inMode.filter { it == event.player }.forEach {

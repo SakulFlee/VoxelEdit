@@ -54,7 +54,7 @@ class CommandHandler : BukkitCommand("voxeledit") {
                         sender.sendMessage("...")
 
                         sender.sendMessage("VE-Tool")
-                        sender.sendMessage("...")
+                        sender.sendMessage("tool (bind|b)|(unbind|u) (left|l)|(right|r) <command>")
 
                         sender.sendMessage("SETTINGS")
                         sender.sendMessage("bps <BPS>")
@@ -501,36 +501,46 @@ class CommandHandler : BukkitCommand("voxeledit") {
                     /* Clipboard */
                     /* VE-Tool */
                         "tool" -> {
-                            if (args.size <= 1) {
-                                sender.sendMessage("tool left|right <command>")
+                            if (args.size <= 3) {
+                                sender.sendMessage("tool (bind|b)|(unbind|u) (left|l)|(right|r) <command>")
                                 return@runTaskAsynchronously
                             }
 
-                            // TODO: implement command
-                            // TODO: add way to remove tool [just... "tool left" ?]
-
-                            // __ SCRAP __
-                            var s = ""
-                            for (a in 1 until args.size) s += "${args[a]} "
-                            Logger.debug(" -> $s")
-
-                            val split = s.split(Regex("\"(.*?)\""))
-                            Logger.debug(" -> ${split.size}")
-                            if (split.size > 3) {
-                                sender.sendMessage("Too many arguments!")
-                                sender.sendMessage("Place command between \"...\"")
-                                sender.sendMessage("tool (<left -> command>)(|)(<right -> command>)")
-                                return@runTaskAsynchronously
-                            }
-                            if (split.isEmpty()) {
-                                sender.sendMessage("tool (<left -> command>)(|)(<right -> command>)")
-                                return@runTaskAsynchronously
+                            val bind: Boolean = when {
+                                args[1] == "bind" || args[1] == "b" -> true
+                                args[1] == "unbind" || args[1] == "u" -> false
+                                else -> {
+                                    sender.sendMessage("tool (bind|b)|(unbind|u) (left|l)|(right|r) <command>")
+                                    return@runTaskAsynchronously
+                                }
                             }
 
-                            val leftCommand = split[0]
-                            val rightCommand = if (split.size > 1) split[1] else null
+                            when (args[2].toLowerCase()) {
+                                "left", "l" -> {
+                                    var s = ""
+                                    for (a in 3 until args.size) s += "${args[a]} "
 
-                            VETool.addTool(sender, leftCommand, rightCommand)
+                                    if (bind) {
+                                        VETool.bindToolToPlayer(sender, s, null)
+                                    } else {
+                                        VETool.unbindToolFromPlayer(sender, true, false)
+                                    }
+                                }
+                                "right", "r" -> {
+                                    var s = ""
+                                    for (a in 3 until args.size) s += "${args[a]} "
+
+                                    if (bind) {
+                                        VETool.bindToolToPlayer(sender, null, s)
+                                    } else {
+                                        VETool.unbindToolFromPlayer(sender, false, true)
+                                    }
+                                }
+                                else -> {
+                                    sender.sendMessage("tool (bind|b)|(unbind|u) (left|l)|(right|r) <command>")
+                                    return@runTaskAsynchronously
+                                }
+                            }
                         }
                     /* Settings */
                         "bps" -> {
@@ -643,8 +653,14 @@ class CommandHandler : BukkitCommand("voxeledit") {
                 s = s.substring(0, index)
             }
 
-            material = Material.matchMaterial(s)
-            output += Bundle(material, mod)
+            try {
+                material = Material.matchMaterial(s)
+                output += Bundle(material, mod)
+            } catch (e: IllegalStateException) {
+                player.sendMessage("Malformed material name!")
+
+                return arrayOf()
+            }
         }
 
         return output

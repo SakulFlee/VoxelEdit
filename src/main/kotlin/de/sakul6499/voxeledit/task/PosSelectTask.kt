@@ -29,8 +29,8 @@ class PosSelectTask(private val world: World, pos1: Vector, pos2: Vector, materi
             yEnd = pos2.blockY
         }
 
-        if (yBegin > 255) yBegin = 255
-        if (yEnd < 0) yEnd = 0
+        if (yEnd > 255) yEnd = 255
+        if (yBegin < 0) yBegin = 0
 
         val xBegin: Int
         val xEnd: Int

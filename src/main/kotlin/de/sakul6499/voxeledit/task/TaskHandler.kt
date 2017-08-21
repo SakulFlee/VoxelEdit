@@ -16,12 +16,13 @@ object TaskHandler {
 
     init {
         Bukkit.getServer().scheduler.runTaskTimer(VoxelEdit.javaPlugin, {
-            if (tasks.isNotEmpty()) {
+            val taskCount = tasks.count { !it.finished && !it.canceled }
+            if (taskCount > 0) {
                 // Blocks Per Task
-                val bpt = BPS / tasks.size
+                val bpt = BPS / taskCount
 
                 tasks.filterNot { it.finished || it.canceled }.forEach {
-                    val timeLeft = it.task.count() / bpt
+                    val timeLeft = it.task.count(it.undo) / bpt
 
                     for (i in 0..bpt) {
                         if (it.undo) {
@@ -42,7 +43,6 @@ object TaskHandler {
                     }
 
                     it.notifier.sendMessage("#${it.id} BPS: $BPS BPT: $bpt [${timeLeft}s - ${it.task.count(it.undo)}b]")
-//                    it.notifier.sendMessage("#${it.id} BPS: $BPS BPT: $bpt [${timeLeft}s]")
                 }
             } else {
                 Thread.sleep(1000)

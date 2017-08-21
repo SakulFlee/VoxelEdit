@@ -1,68 +1,81 @@
 package de.sakul6499.voxeledit
 
 import org.bukkit.ChatColor
+import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.block.Action
 import org.bukkit.event.player.PlayerInteractEvent
-import java.util.*
 
 object VETool : Listener {
-    private val tools: MutableMap<UUID, String> = mutableMapOf()
+    private val leftClickTools: MutableList<Triple<Player, Material, String>> = mutableListOf()
+    private val rightClickTools: MutableList<Triple<Player, Material, String>> = mutableListOf()
 
+    @Suppress("UNUSED")
     @EventHandler
     fun onPlayerInteractEvent(event: PlayerInteractEvent) {
-        if (!event.item.itemMeta.hasLore()) return
-
         when (event.action) {
             Action.LEFT_CLICK_BLOCK, Action.LEFT_CLICK_AIR -> {
-                if (event.item.itemMeta.lore.size >= 1) {
-                    val cmd = tools[UUID.fromString(event.item.itemMeta.lore[0])]
-                    if (cmd != null) {
-                        event.isCancelled = true
-
-                        event.player.performCommand(cmd)
-                    }
-                }
+                val triple = leftClickTools.firstOrNull { it.first == event.player && it.second == event.material }
+                if (triple != null) event.player.performCommand(triple.third)
             }
             Action.RIGHT_CLICK_AIR, Action.RIGHT_CLICK_BLOCK -> {
-                if (event.item.itemMeta.lore.size >= 2) {
-                    val cmd = tools[UUID.fromString(event.item.itemMeta.lore[1])]
-                    if (cmd != null) {
-                        event.isCancelled = true
-
-                        event.player.performCommand(cmd)
-                    }
-                }
+                val triple = rightClickTools.firstOrNull { it.first == event.player && it.second == event.material }
+                if (triple != null) event.player.performCommand(triple.third)
             }
             else -> {
             }
         }
     }
 
-    fun addTool(player: Player, left: String? = null, right: String? = null) {
-        if (player.inventory.itemInMainHand == null) {
-            player.sendMessage("You do not hold any item in your main hand!")
+    fun unbindToolFromPlayer(player: Player, left: Boolean = false, right: Boolean = false) {
+        if (player.inventory.itemInMainHand == null || player.inventory.itemInMainHand.type == Material.AIR) {
+            player.sendMessage("You do not hold an item in your main hand OR it can not be used for tooling / binding!")
+            return
+        }
+
+        val item = player.inventory.itemInMainHand.type
+
+        if (left) {
+            leftClickTools.removeIf {
+                if (it.first == player && it.second == item) {
+                    player.sendMessage("Unbinding command ${ChatColor.GREEN}'${it.third}'${ChatColor.RESET} from '$item' on action ${ChatColor.AQUA}LEFT${ChatColor.RESET}!")
+
+                    true
+                } else false
+            }
+        }
+        if (right)
+            rightClickTools.removeIf {
+                if (it.first == player && it.second == item) {
+                    player.sendMessage("Unbinding command ${ChatColor.GREEN}'${it.third}'${ChatColor.RESET} from '$item' on action ${ChatColor.AQUA}RIGHT${ChatColor.RESET}!")
+
+                    true
+                } else false
+            }
+    }
+
+    fun bindToolToPlayer(player: Player, left: String? = null, right: String? = null) {
+        if (player.inventory.itemInMainHand == null || player.inventory.itemInMainHand.type == Material.AIR) {
+            player.sendMessage("You do not hold an item in your main hand OR it can not be used for tooling / binding!")
             return
         }
 
         if (left != null) {
-            player.sendMessage("Binding ${ChatColor.GREEN}'/# $left'${ChatColor.RESET} to the current item in hand on action ${ChatColor.AQUA}LEFT${ChatColor.RESET}!")
-            val id = UUID.randomUUID()
-            tools.put(id, "/# $left")
-            if (player.inventory.itemInMainHand.itemMeta.lore == null) {
-                player.inventory.itemInMainHand.itemMeta.lore = listOf(id.toString())
-            } else player.inventory.itemInMainHand.itemMeta.lore[0] = id.toString()
+            val cmd = if (left.startsWith("/")) left.replace("/", "") else "/# $left"
+            player.sendMessage("Binding command ${ChatColor.GREEN}'$cmd'${ChatColor.RESET} to the current item in hand on action ${ChatColor.AQUA}LEFT${ChatColor.RESET}!")
+
+            leftClickTools.removeIf { it.first == player }
+            leftClickTools.add(Triple(player, player.inventory.itemInMainHand.type, cmd))
         }
 
         if (right != null) {
-            player.sendMessage("Binding ${ChatColor.GREEN}'/# $right'${ChatColor.RESET} to the current item in hand on action ${ChatColor.AQUA}RIGHT${ChatColor.RESET}!")
-            val id = UUID.randomUUID()
-            tools.put(id, "/# $right")
-            if (player.inventory.itemInMainHand.itemMeta.lore == null) {
-                player.inventory.itemInMainHand.itemMeta.lore = listOf("", id.toString())
-            } else player.inventory.itemInMainHand.itemMeta.lore[1] = id.toString()
+            val cmd = if (right.startsWith("/")) right.replace("/", "") else "/# $right"
+            player.sendMessage("Binding command ${ChatColor.GREEN}'$cmd'${ChatColor.RESET} to the current item in hand on action ${ChatColor.AQUA}RIGHT${ChatColor.RESET}!")
+
+            rightClickTools.removeIf { it.first == player }
+            rightClickTools.add(Triple(player, player.inventory.itemInMainHand.type, cmd))
         }
     }
 }
