@@ -1,10 +1,8 @@
 package de.sakul6499.voxeledit.task
 
-import de.framework.logger.Logger
 import de.sakul6499.voxeledit.VoxelEdit
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
-import org.bukkit.scheduler.BukkitTask
 
 object TaskHandler {
 
@@ -13,56 +11,72 @@ object TaskHandler {
      */
     var BPS: Int = 2048
 
-    private var tasks: MutableMap<Task, Array<out Player>> = mutableMapOf()
-    private var bTask: BukkitTask? = null
-    private var task: Runnable = Runnable {
-        if (tasks.isEmpty()) {
-            bTask!!.cancel()
-            bTask = null
-            return@Runnable
-        }
+    private var idCounter = 0
+    private val tasks: MutableList<TaskData> = mutableListOf()
 
-        // Blocks Per Task
-        val bpt = BPS / tasks.size
+    init {
+        Bukkit.getServer().scheduler.runTaskTimer(VoxelEdit.javaPlugin, {
+            if (tasks.isNotEmpty()) {
+                // Blocks Per Task
+                val bpt = BPS / tasks.size
 
-        try {
-            val finished: MutableList<Task> = mutableListOf()
+                tasks.filterNot { it.finished || it.canceled }.forEach {
+                    val timeLeft = it.task.count() / bpt
 
-            tasks.forEach {
-                if (finished.contains(it.key)) return@forEach
-                val timeLeft = it.key.count() / bpt
-
-                for (i in 0..bpt) {
-                    if (!it.key.process()) {
-                        Logger.debug("Finished!")
-                        it.value.forEach { player -> player.sendMessage("#${it.key.id} FINISHED!") }
-                        finished.add(it.key)
-                        return@forEach
+                    for (i in 0..bpt) {
+                        if (it.undo) {
+                            if (!it.task.undo()) {
+                                it.notifier.sendMessage("#${it.id} undo task finished!")
+                                it.finished = true
+                                return@forEach
+                            }
+                            it.loops++
+                        } else {
+                            if (!it.task.process()) {
+                                it.notifier.sendMessage("#${it.id} task finished!")
+                                it.finished = true
+                                return@forEach
+                            }
+                            it.loops++
+                        }
                     }
-                    it.key.loops++
-                }
 
-                it.value.forEach { player ->
-                    player.sendMessage("#${it.key.id} BPS: $BPS BPT: $bpt [$timeLeft s]")
+                    it.notifier.sendMessage("#${it.id} BPS: $BPS BPT: $bpt [${timeLeft}s - ${it.task.count(it.undo)}b]")
+//                    it.notifier.sendMessage("#${it.id} BPS: $BPS BPT: $bpt [${timeLeft}s]")
                 }
-                Logger.debug("#${it.key.id} BPS: $BPS BPT: $bpt [$timeLeft]")
+            } else {
+                Thread.sleep(1000)
             }
-
-            finished.forEach { tasks.remove(it) }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-
+        }, 0, 20)
     }
 
-    fun addTask(t: Task, vararg notifier: Player): Int {
-        t.id = tasks.size + 1
-        tasks.put(t, notifier)
+    fun addTask(t: Task, notifier: Player): Int {
+        val taskData = TaskData(t, ++idCounter, notifier)
 
-        if (bTask == null) {
-            bTask = Bukkit.getServer().scheduler.runTaskTimer(VoxelEdit.javaPlugin, task, 0, 20)
-        }
+        notifier.sendMessage("Added task #${taskData.id}!")
+        notifier.sendMessage("Block to process: ${taskData.task.overallBlocksToProcess}")
+        tasks.add(taskData)
 
-        return tasks.size
+        return taskData.id
     }
+
+    fun cancelTask(id: Int) {
+        val task = tasks.firstOrNull { it.id == id } ?: throw IllegalStateException("Task with id $id not found!")
+        task.notifier.sendMessage("Cancelling task: $id")
+
+        task.canceled = true
+    }
+
+    fun undoTask(id: Int) {
+        val task = tasks.firstOrNull { it.id == id } ?: throw IllegalStateException("Task with id $id not found!")
+        task.notifier.sendMessage("Undo task: $id")
+
+        task.undo = !task.undo
+        if (task.finished) task.finished = false
+        if (task.canceled) task.canceled = false
+    }
+
+    fun getTasksForPlayer(player: Player): List<TaskData> = tasks.filter { it.notifier == player }
+    fun getTasksForPlayerByName(name: String): List<TaskData> = tasks.filter { it.notifier.name == name }
+    fun getTaskByID(id: Int): TaskData? = tasks.filter { it.id == id }.firstOrNull()
 }

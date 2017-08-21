@@ -1,9 +1,11 @@
 package de.sakul6499.voxeledit
 
+import de.framework.api.Bundle
 import de.framework.logger.Logger
+import de.sakul6499.voxeledit.clipboard.Clipboard
 import de.sakul6499.voxeledit.task.*
+import org.bukkit.Bukkit
 import org.bukkit.Material
-import org.bukkit.World
 import org.bukkit.command.CommandSender
 import org.bukkit.command.defaults.BukkitCommand
 import org.bukkit.entity.Player
@@ -17,265 +19,581 @@ class CommandHandler : BukkitCommand("voxeledit") {
         aliases = listOf("ve", "/voxeledit", "/ve", "#", "/#")
     }
 
-    var world: World? = null
-
     override fun execute(sender: CommandSender?, commandLabel: String?, args: Array<out String>?): Boolean {
-        try {
-            if (sender is Player) {
-                sender.sendMessage("VoxelEdit!")
-                sender.sendMessage("#$commandLabel")
-                args?.forEach {
-                    println(" -> $it")
+        Bukkit.getServer().scheduler.runTaskAsynchronously(VoxelEdit.javaPlugin, {
+            try {
+                if (sender is Player) {
+                    if (args == null || args.isEmpty() || args[0].equals("help", true) || args[0] == "?") {
+                        sender.sendMessage("VoxelEdit by @Sakul6499 | Lukas!")
+                        sender.sendMessage("Voxel Edit Commands:")
+
+                        sender.sendMessage("FORMS")
+                        sender.sendMessage("sphere|s <radius> <blockName:blockDataIndex;...>")
+                        sender.sendMessage("voxel|v <radius> <blockName:blockDataIndex;...>")
+                        sender.sendMessage("cylinder|c <radius> <up> (<down>) <blockName:blockDataIndex;...>")
+                        sender.sendMessage("tower|t <radius> <up> (<down>) <blockName:blockDataIndex;...>")
+
+                        sender.sendMessage("HOLLOW")
+                        sender.sendMessage("hollow_sphere|hs <radius> <blockName:blockDataIndex;...>")
+                        sender.sendMessage("hollow_voxel|hv <radius> <blockName:blockDataIndex;...>")
+                        sender.sendMessage("hollow_cylinder|hc <radius> <up> (<down>) <blockName:blockDataIndex;...>")
+                        sender.sendMessage("hollow_tower|ht <radius> <up> (<down>) <blockName:blockDataIndex;...>")
+
+                        sender.sendMessage("CLIPBOARD - MANUAL")
+                        sender.sendMessage("undo (<id>)")
+                        sender.sendMessage("cancel (<id>)")
+                        sender.sendMessage("pos1|p1")
+                        sender.sendMessage("pos2|p2")
+                        sender.sendMessage("place|p <blockName:blockDataIndex;...> ('hollow')")
+                        sender.sendMessage("replace|r <filter -> blockName:blockDataIndex;...> <replace -> blockName:blockDataIndex;...> ('hollow')")
+
+                        sender.sendMessage("CLIPBOARD - SELECTOR")
+                        sender.sendMessage("...")
+
+                        sender.sendMessage("CLIPBOARD - OPERATIONS")
+                        sender.sendMessage("...")
+
+                        sender.sendMessage("VE-Tool")
+                        sender.sendMessage("...")
+
+                        sender.sendMessage("SETTINGS")
+                        sender.sendMessage("bps <BPS>")
+                        sender.sendMessage("mode [enter VE-Mode]")
+
+                        return@runTaskAsynchronously
+                    }
+
+                    when (args[0].toLowerCase()) {
+                    /* Forms */
+                        "sphere", "s" -> {
+                            if (args.size <= 2) {
+                                sender.sendMessage("sphere|s <radius> <blockName:blockDataIndex;...>")
+                                return@runTaskAsynchronously
+                            }
+
+                            val loc = sender.location
+                            val world = loc.world
+
+                            val locX = loc.blockX
+                            val locY = loc.blockY
+                            val locZ = loc.blockZ
+
+                            val midPoint = Vector(locX, locY, locZ)
+                            val radius: Int = try {
+                                val i = Integer.parseInt(args[1]); if (i <= 0) {
+                                    sender.sendMessage("Radius must be greater than zero!"); return@runTaskAsynchronously
+                                } else i
+                            } catch (e: NumberFormatException) {
+                                sender.sendMessage("Radius must be a number!"); return@runTaskAsynchronously
+                            }
+                            val materials = try {
+                                fetchMaterials(args[2], sender)
+                            } catch (e: NullPointerException) {
+                                sender.sendMessage("Materials malformed!"); return@runTaskAsynchronously
+                            }
+                            if (materials.isEmpty()) {
+                                sender.sendMessage("Materials must not be empty!"); return@runTaskAsynchronously
+                            }
+
+                            sender.teleport(loc.add(0.0, radius.toDouble() + 1, 0.0))
+                            TaskHandler.addTask(SphereTask(world, midPoint, radius, materials), sender)
+                        }
+                        "voxel", "v" -> {
+                            if (args.size <= 2) {
+                                sender.sendMessage("voxel|v <radius> <blockName:blockDataIndex;...>")
+                                return@runTaskAsynchronously
+                            }
+
+                            val loc = sender.location
+                            val world = loc.world
+
+                            val locX = loc.blockX
+                            val locY = loc.blockY
+                            val locZ = loc.blockZ
+
+                            val midPoint = Vector(locX, locY, locZ)
+                            val radius: Int = try {
+                                val i = Integer.parseInt(args[1]); if (i <= 0) {
+                                    sender.sendMessage("Radius must be greater than zero!"); return@runTaskAsynchronously
+                                } else i
+                            } catch (e: NumberFormatException) {
+                                sender.sendMessage("Radius must be a number!"); return@runTaskAsynchronously
+                            }
+                            val materials = try {
+                                fetchMaterials(args[2], sender)
+                            } catch (e: NullPointerException) {
+                                sender.sendMessage("Materials malformed!"); return@runTaskAsynchronously
+                            }
+                            if (materials.isEmpty()) {
+                                sender.sendMessage("Materials must not be empty!"); return@runTaskAsynchronously
+                            }
+
+                            sender.teleport(loc.add(0.0, radius.toDouble() + 1, 0.0))
+                            TaskHandler.addTask(VoxelTask(world, midPoint, radius, materials), sender)
+                        }
+                        "cylinder", "c" -> {
+                            if (args.size <= 3) {
+                                sender.sendMessage("cylinder|c <radius> <up> (<down>) <blockName:blockDataIndex;...>")
+                                return@runTaskAsynchronously
+                            }
+
+                            val loc = sender.location
+                            val world = loc.world
+
+                            val locX = loc.blockX
+                            val locY = loc.blockY
+                            val locZ = loc.blockZ
+
+                            val midPoint = Vector(locX, locY, locZ)
+                            val radius: Int = try {
+                                val i = Integer.parseInt(args[1]); if (i <= 0) {
+                                    sender.sendMessage("Radius must be greater than zero!"); return@runTaskAsynchronously
+                                } else i
+                            } catch (e: NumberFormatException) {
+                                sender.sendMessage("Radius must be a number!"); return@runTaskAsynchronously
+                            }
+                            val up: Int = try {
+                                Integer.parseInt(args[2])
+                            } catch (e: NumberFormatException) {
+                                sender.sendMessage("Up must be a number!"); return@runTaskAsynchronously
+                            }
+                            val down: Int = if (args.size > 4) try {
+                                Integer.parseInt(args[1])
+                            } catch (e: NumberFormatException) {
+                                sender.sendMessage("Up must be a number!"); return@runTaskAsynchronously
+                            } else 0
+                            val materials = try {
+                                if (args.size > 4) fetchMaterials(args[4], sender) else fetchMaterials(args[3], sender)
+                            } catch (e: NullPointerException) {
+                                sender.sendMessage("Materials malformed!"); return@runTaskAsynchronously
+                            }
+                            if (materials.isEmpty()) {
+                                sender.sendMessage("Materials must not be empty!"); return@runTaskAsynchronously
+                            }
+
+                            sender.teleport(loc.add(0.0, up.toDouble() + 1, 0.0))
+                            TaskHandler.addTask(CylinderTask(world, midPoint, radius, up, down, materials), sender)
+                        }
+                        "tower", "t" -> {
+                            if (args.size <= 3) {
+                                sender.sendMessage("tower|t <radius> <up> (<down>) <blockName:blockDataIndex;...>")
+                                return@runTaskAsynchronously
+                            }
+
+                            val loc = sender.location
+                            val world = loc.world
+
+                            val locX = loc.blockX
+                            val locY = loc.blockY
+                            val locZ = loc.blockZ
+
+                            val midPoint = Vector(locX, locY, locZ)
+                            val radius: Int = try {
+                                val i = Integer.parseInt(args[1]); if (i <= 0) {
+                                    sender.sendMessage("Radius must be greater than zero!"); return@runTaskAsynchronously
+                                } else i
+                            } catch (e: NumberFormatException) {
+                                sender.sendMessage("Radius must be a number!"); return@runTaskAsynchronously
+                            }
+                            val up: Int = try {
+                                Integer.parseInt(args[2])
+                            } catch (e: NumberFormatException) {
+                                sender.sendMessage("Up must be a number!"); return@runTaskAsynchronously
+                            }
+                            val down: Int = if (args.size > 4) try {
+                                Integer.parseInt(args[1])
+                            } catch (e: NumberFormatException) {
+                                sender.sendMessage("Up must be a number!"); return@runTaskAsynchronously
+                            } else 0
+                            val materials = try {
+                                if (args.size > 4) fetchMaterials(args[4], sender) else fetchMaterials(args[3], sender)
+                            } catch (e: NullPointerException) {
+                                sender.sendMessage("Materials malformed!"); return@runTaskAsynchronously
+                            }
+                            if (materials.isEmpty()) {
+                                sender.sendMessage("Materials must not be empty!"); return@runTaskAsynchronously
+                            }
+
+                            sender.teleport(loc.add(0.0, up.toDouble() + 1, 0.0))
+                            TaskHandler.addTask(TowerTask(world, midPoint, radius, up, down, materials), sender)
+                        }
+                    /* Hollow */
+                        "hollow_sphere", "hs" -> {
+                            if (args.size <= 2) {
+                                sender.sendMessage("hollow_sphere|hs <radius> <blockName:blockDataIndex;...>")
+                                return@runTaskAsynchronously
+                            }
+
+                            val loc = sender.location
+                            val world = loc.world
+
+                            val locX = loc.blockX
+                            val locY = loc.blockY
+                            val locZ = loc.blockZ
+
+                            val midPoint = Vector(locX, locY, locZ)
+                            val radius: Int = try {
+                                val i = Integer.parseInt(args[1]); if (i <= 0) {
+                                    sender.sendMessage("Radius must be greater than zero!"); return@runTaskAsynchronously
+                                } else i
+                            } catch (e: NumberFormatException) {
+                                sender.sendMessage("Radius must be a number!"); return@runTaskAsynchronously
+                            }
+                            val materials = try {
+                                fetchMaterials(args[2], sender)
+                            } catch (e: NullPointerException) {
+                                sender.sendMessage("Materials malformed!"); return@runTaskAsynchronously
+                            }
+                            if (materials.isEmpty()) {
+                                sender.sendMessage("Materials must not be empty!"); return@runTaskAsynchronously
+                            }
+
+                            sender.teleport(loc.add(0.0, radius.toDouble() + 1, 0.0))
+                            TaskHandler.addTask(SphereTask(world, midPoint, radius, materials, true), sender)
+                        }
+                        "hollow_voxel", "hv" -> {
+                            if (args.size <= 2) {
+                                sender.sendMessage("hollow_voxel|hv <radius> <blockName:blockDataIndex;...>")
+                                return@runTaskAsynchronously
+                            }
+
+                            val loc = sender.location
+                            val world = loc.world
+
+                            val locX = loc.blockX
+                            val locY = loc.blockY
+                            val locZ = loc.blockZ
+
+                            val midPoint = Vector(locX, locY, locZ)
+                            val radius: Int = try {
+                                val i = Integer.parseInt(args[1]); if (i <= 0) {
+                                    sender.sendMessage("Radius must be greater than zero!"); return@runTaskAsynchronously
+                                } else i
+                            } catch (e: NumberFormatException) {
+                                sender.sendMessage("Radius must be a number!"); return@runTaskAsynchronously
+                            }
+                            val materials = try {
+                                fetchMaterials(args[2], sender)
+                            } catch (e: NullPointerException) {
+                                sender.sendMessage("Materials malformed!"); return@runTaskAsynchronously
+                            }
+                            if (materials.isEmpty()) {
+                                sender.sendMessage("Materials must not be empty!"); return@runTaskAsynchronously
+                            }
+
+                            sender.teleport(loc.add(0.0, radius.toDouble() + 1, 0.0))
+                            TaskHandler.addTask(VoxelTask(world, midPoint, radius, materials, true), sender)
+                        }
+                        "hollow_cylinder", "hc" -> {
+                            if (args.size <= 3) {
+                                sender.sendMessage("hollow_cylinder|hc <radius> <up> (<down>) <blockName:blockDataIndex;...>")
+                                return@runTaskAsynchronously
+                            }
+
+                            val loc = sender.location
+                            val world = loc.world
+
+                            val locX = loc.blockX
+                            val locY = loc.blockY
+                            val locZ = loc.blockZ
+
+                            val midPoint = Vector(locX, locY, locZ)
+                            val radius: Int = try {
+                                val i = Integer.parseInt(args[1]); if (i <= 0) {
+                                    sender.sendMessage("Radius must be greater than zero!"); return@runTaskAsynchronously
+                                } else i
+                            } catch (e: NumberFormatException) {
+                                sender.sendMessage("Radius must be a number!"); return@runTaskAsynchronously
+                            }
+                            val up: Int = try {
+                                Integer.parseInt(args[2])
+                            } catch (e: NumberFormatException) {
+                                sender.sendMessage("Up must be a number!"); return@runTaskAsynchronously
+                            }
+                            val down: Int = if (args.size > 4) try {
+                                Integer.parseInt(args[1])
+                            } catch (e: NumberFormatException) {
+                                sender.sendMessage("Up must be a number!"); return@runTaskAsynchronously
+                            } else 0
+                            val materials = try {
+                                if (args.size > 4) fetchMaterials(args[4], sender) else fetchMaterials(args[3], sender)
+                            } catch (e: NullPointerException) {
+                                sender.sendMessage("Materials malformed!"); return@runTaskAsynchronously
+                            }
+                            if (materials.isEmpty()) {
+                                sender.sendMessage("Materials must not be empty!"); return@runTaskAsynchronously
+                            }
+
+                            sender.teleport(loc.add(0.0, up.toDouble() + 1, 0.0))
+                            TaskHandler.addTask(CylinderTask(world, midPoint, radius, up, down, materials, true), sender)
+                        }
+                        "hollow_tower", "ht" -> {
+                            if (args.size <= 3) {
+                                sender.sendMessage("hollow_tower|ht <radius> <up> (<down>) <blockName:blockDataIndex;...>")
+                                return@runTaskAsynchronously
+                            }
+
+                            val loc = sender.location
+                            val world = loc.world
+
+                            val locX = loc.blockX
+                            val locY = loc.blockY
+                            val locZ = loc.blockZ
+
+                            val midPoint = Vector(locX, locY, locZ)
+                            val radius: Int = try {
+                                val i = Integer.parseInt(args[1]); if (i <= 0) {
+                                    sender.sendMessage("Radius must be greater than zero!"); return@runTaskAsynchronously
+                                } else i
+                            } catch (e: NumberFormatException) {
+                                sender.sendMessage("Radius must be a number!"); return@runTaskAsynchronously
+                            }
+                            val up: Int = try {
+                                Integer.parseInt(args[2])
+                            } catch (e: NumberFormatException) {
+                                sender.sendMessage("Up must be a number!"); return@runTaskAsynchronously
+                            }
+                            val down: Int = if (args.size > 4) try {
+                                Integer.parseInt(args[1])
+                            } catch (e: NumberFormatException) {
+                                sender.sendMessage("Up must be a number!"); return@runTaskAsynchronously
+                            } else 0
+                            val materials = try {
+                                if (args.size > 4) fetchMaterials(args[4], sender) else fetchMaterials(args[3], sender)
+                            } catch (e: NullPointerException) {
+                                sender.sendMessage("Materials malformed!"); return@runTaskAsynchronously
+                            }
+                            if (materials.isEmpty()) {
+                                sender.sendMessage("Materials must not be empty!"); return@runTaskAsynchronously
+                            }
+
+                            sender.teleport(loc.add(0.0, up.toDouble() + 1, 0.0))
+                            TaskHandler.addTask(TowerTask(world, midPoint, radius, up, down, materials, true), sender)
+                        }
+                    /* Clipboard - Manual */
+                        "undo" -> {
+                            try {
+                                val id: Int = if (args.size <= 1) {
+                                    val tasks = TaskHandler.getTasksForPlayer(sender)
+                                    tasks[tasks.size - 1].id
+                                } else Integer.parseInt(args[1])
+                                if (id < 0) {
+                                    sender.sendMessage("The task id must be zero or greater!")
+                                    sender.sendMessage("Tip: use 'tasks' to view your tasks!")
+                                    return@runTaskAsynchronously
+                                }
+
+                                TaskHandler.undoTask(id)
+                            } catch (e: NullPointerException) {
+                                sender.sendMessage("Either something critical just happened or you simply do not have any tasks queued yet, that we could undo!")
+                                sender.sendMessage("Tip: use 'tasks' to view your tasks!")
+                                return@runTaskAsynchronously
+                            } catch (e: IndexOutOfBoundsException) {
+                                sender.sendMessage("A task with the id '${args[1]}' couldn't be found!")
+                                sender.sendMessage("Tip: use 'tasks' to view your tasks!")
+                                return@runTaskAsynchronously
+                            } catch (e: NumberFormatException) {
+                                sender.sendMessage("The task id must be a number!")
+                                sender.sendMessage("Tip: use 'tasks' to view your tasks!")
+                                return@runTaskAsynchronously
+                            }
+                        }
+                        "cancel" -> {
+                            try {
+                                val id: Int = if (args.size <= 1) {
+                                    val tasks = TaskHandler.getTasksForPlayer(sender)
+                                    tasks[tasks.size - 1].id
+                                } else Integer.parseInt(args[1])
+                                if (id < 0) {
+                                    sender.sendMessage("The task id must be zero or greater!")
+                                    sender.sendMessage("Tip: use 'tasks' to view your tasks!")
+                                    return@runTaskAsynchronously
+                                }
+
+                                TaskHandler.cancelTask(id)
+                            } catch (e: NullPointerException) {
+                                sender.sendMessage("Either something critical just happened or you simply do not have any tasks queued yet, that we could cancel!")
+                                sender.sendMessage("Tip: use 'tasks' to view your tasks!")
+                                return@runTaskAsynchronously
+                            } catch (e: IndexOutOfBoundsException) {
+                                sender.sendMessage("A task with the id '${args[1]}' couldn't be found!")
+                                sender.sendMessage("Tip: use 'tasks' to view your tasks!")
+                                return@runTaskAsynchronously
+                            } catch (e: NumberFormatException) {
+                                sender.sendMessage("The task id must be a number!")
+                                sender.sendMessage("Tip: use 'tasks' to view your tasks!")
+                                return@runTaskAsynchronously
+                            }
+                        }
+                        "pos1", "p1" -> {
+                            sender.sendMessage("Pushing position!")
+                            Clipboard.pushPosition(sender, sender.location.toVector(), null, sender.location.world)
+                        }
+                        "pos2", "p2" -> {
+                            sender.sendMessage("Pushing position!")
+                            Clipboard.pushPosition(sender, null, sender.location.toVector(), sender.location.world)
+                        }
+                        "place", "p" -> {
+                            if (args.size <= 1) {
+                                sender.sendMessage("place|p <blockName:blockDataIndex;...> ('hollow')")
+                                return@runTaskAsynchronously
+                            }
+
+                            val materials = try {
+                                fetchMaterials(args[1], sender)
+                            } catch (e: NullPointerException) {
+                                sender.sendMessage("Materials malformed!"); return@runTaskAsynchronously
+                            }
+                            if (materials.isEmpty()) {
+                                sender.sendMessage("Materials must not be empty!"); return@runTaskAsynchronously
+                            }
+
+                            var hollow = false
+                            if (args.size >= 3) {
+                                if (args[2] == "hollow") {
+                                    hollow = true
+                                } else {
+                                    sender.sendMessage("Didn't get '${args[2]}'!")
+                                    sender.sendMessage("place|p <blockName:blockDataIndex;...> ('hollow')")
+                                    return@runTaskAsynchronously
+                                }
+                            }
+
+                            Clipboard.actionPlace(sender, materials, hollow)
+                        }
+                        "replace", "r" -> {
+                            if (args.size <= 2) {
+                                sender.sendMessage("replace|r <filter -> blockName:blockDataIndex;...> <replace -> blockName:blockDataIndex;...> ('hollow')")
+                                return@runTaskAsynchronously
+                            }
+
+                            val filter = try {
+                                fetchMaterials(args[1], sender)
+                            } catch (e: NullPointerException) {
+                                sender.sendMessage("Filter materials malformed!"); return@runTaskAsynchronously
+                            }
+                            if (filter.isEmpty()) {
+                                sender.sendMessage("Filter materials must not be empty!"); return@runTaskAsynchronously
+                            }
+
+                            val replace = try {
+                                fetchMaterials(args[2], sender)
+                            } catch (e: NullPointerException) {
+                                sender.sendMessage("Replace materials malformed!"); return@runTaskAsynchronously
+                            }
+                            if (replace.isEmpty()) {
+                                sender.sendMessage("Replace materials must not be empty!"); return@runTaskAsynchronously
+                            }
+
+                            var hollow = false
+                            if (args.size >= 4) {
+                                if (args[3] == "hollow") {
+                                    hollow = true
+                                } else {
+                                    sender.sendMessage("Didn't get '${args[3]}'!")
+                                    sender.sendMessage("replace|r <filter -> blockName:blockDataIndex;...> <replace -> blockName:blockDataIndex;...> ('hollow')")
+                                    return@runTaskAsynchronously
+                                }
+                            }
+
+                            Clipboard.actionReplace(sender, filter, replace, hollow)
+                        }
+                    /* Clipboard */
+                    /* VE-Tool */
+                        "tool" -> {
+                            if (args.size <= 1) {
+                                sender.sendMessage("tool left|right <command>")
+                                return@runTaskAsynchronously
+                            }
+
+                            // TODO: implement command
+                            // TODO: add way to remove tool [just... "tool left" ?]
+
+                            // __ SCRAP __
+                            var s = ""
+                            for (a in 1 until args.size) s += "${args[a]} "
+                            Logger.debug(" -> $s")
+
+                            val split = s.split(Regex("\"(.*?)\""))
+                            Logger.debug(" -> ${split.size}")
+                            if (split.size > 3) {
+                                sender.sendMessage("Too many arguments!")
+                                sender.sendMessage("Place command between \"...\"")
+                                sender.sendMessage("tool (<left -> command>)(|)(<right -> command>)")
+                                return@runTaskAsynchronously
+                            }
+                            if (split.isEmpty()) {
+                                sender.sendMessage("tool (<left -> command>)(|)(<right -> command>)")
+                                return@runTaskAsynchronously
+                            }
+
+                            val leftCommand = split[0]
+                            val rightCommand = if (split.size > 1) split[1] else null
+
+                            VETool.addTool(sender, leftCommand, rightCommand)
+                        }
+                    /* Settings */
+                        "bps" -> {
+                            if (args.size <= 1) {
+                                sender.sendMessage("Current BPS: ${TaskHandler.BPS}")
+                                return@runTaskAsynchronously
+                            }
+
+                            try {
+                                val bps = parse(args[1], sender)
+                                if (bps <= 0) {
+                                    sender.sendMessage("The BPS value must not be lower or equal zero!")
+                                    return@runTaskAsynchronously
+                                }
+
+                                TaskHandler.BPS = bps
+                            } catch (e: NumberFormatException) {
+                                sender.sendMessage("The BPS value must be a number!")
+                                return@runTaskAsynchronously
+                            }
+                        }
+                        "tasks" -> {
+                            if (args.size <= 1) {
+                                sender.sendMessage("Tasks for @${sender.name}:")
+                                TaskHandler.getTasksForPlayer(sender).forEach {
+                                    sender.sendMessage(" -> $it")
+                                }
+
+                                return@runTaskAsynchronously
+                            }
+
+                            for (i in 1 until args.size) {
+                                try {
+                                    sender.sendMessage("Tasks for @${args[i]}:")
+                                    TaskHandler.getTasksForPlayerByName(args[i]).forEach {
+                                        sender.sendMessage(" -> $it")
+                                    }
+                                } catch (e: Exception) {
+                                    sender.sendMessage("Unable to get tasks for player '${args[i]}'!")
+                                }
+                            }
+                        }
+                        "mode" -> {
+                            VEMode.handlePlayer(sender)
+                        }
+                        else -> sender.sendMessage("Unknown command!")
+                    }
+
+                } else {
+                    Logger.debug("Command line command access for VoxelEdit is limited [Currently no commands implemented! :( ]")
                 }
 
-                if (args == null || args.isEmpty() || args[0].equals("help", true) || args[0] == "?") {
-                    sender.sendMessage("Voxel Edit Commands:")
+                return@runTaskAsynchronously
+            } catch (e: Exception) {
+                val msg = "Failed during command execution! [$e]"
 
-                    sender.sendMessage("FORMS")
-                    sender.sendMessage("sphere|s <radius> <blockName:blockDataIndex;...>")
-                    sender.sendMessage("voxel|v <radius> <blockName:blockDataIndex;...>")
-                    sender.sendMessage("cylinder|c <radius> <up> (<down>) <blockName:blockDataIndex;...>")
-                    sender.sendMessage("tower|t <radius> <up> (<down>) <blockName:blockDataIndex;...>")
-
-                    sender.sendMessage("HOLLOW")
-                    sender.sendMessage("hollow_sphere|hs <radius> <blockName:blockDataIndex;...>")
-                    sender.sendMessage("hollow_voxel|hv <radius> <blockName:blockDataIndex;...>")
-                    sender.sendMessage("hollow_cylinder|hc <radius> <up> (<down>) <blockName:blockDataIndex;...>")
-                    sender.sendMessage("hollow_tower|ht <radius> <up> (<down>) <blockName:blockDataIndex;...>")
-
-                    sender.sendMessage("MANUAL")
-                    sender.sendMessage("...")
-
-                    sender.sendMessage("CLIPBOARD")
-                    sender.sendMessage("...")
-
-                    sender.sendMessage("SETTINGS")
-                    sender.sendMessage("bps <BPS>")
-
-                    return true
-                }
-
-                when (args[0].toLowerCase()) {
-                /* Forms */
-                    "sphere", "s" -> {
-                        if (args.size <= 2) {
-                            sender.sendMessage("sphere|s <radius> <blockName:blockDataIndex;...>")
-                            return true
-                        }
-
-                        val loc = sender.location
-                        val world = loc.world
-
-                        val locX = loc.blockX
-                        val locY = loc.blockY
-                        val locZ = loc.blockZ
-
-                        val midPoint = Vector(locX, locY, locZ)
-                        val radius = parse(args[1], sender)
-                        val materials = fetchMaterials(args[2], sender)
-
-                        if (radius <= 0 || materials.isEmpty()) return true
-
-                        sender.teleport(loc.add(0.0, radius.toDouble() + 1, 0.0))
-                        TaskHandler.addTask(SphereTask(world.uid, midPoint, radius, materials), sender)
-                    }
-                    "voxel", "v" -> {
-                        if (args.size <= 2) {
-                            sender.sendMessage("voxel|v <radius> <blockName:blockDataIndex;...>")
-                            return true
-                        }
-
-                        val loc = sender.location
-                        val world = loc.world
-
-                        val locX = loc.blockX
-                        val locY = loc.blockY
-                        val locZ = loc.blockZ
-
-                        val midPoint = Vector(locX, locY, locZ)
-                        val radius = parse(args[1], sender)
-                        val materials = fetchMaterials(args[2], sender)
-
-                        if (radius <= 0 || materials.isEmpty()) return true
-
-                        sender.teleport(loc.add(0.0, radius.toDouble() + 1, 0.0))
-                        TaskHandler.addTask(VoxelTask(world.uid, midPoint, radius, materials), sender)
-                    }
-                    "cylinder", "c" -> {
-                        if (args.size <= 3) {
-                            sender.sendMessage("cylinder|c <radius> <up> (<down>) <blockName:blockDataIndex;...>")
-                            return true
-                        }
-
-                        val loc = sender.location
-                        val world = loc.world
-
-                        val locX = loc.blockX
-                        val locY = loc.blockY
-                        val locZ = loc.blockZ
-
-                        val midPoint = Vector(locX, locY, locZ)
-                        val radius = parse(args[1], sender)
-                        val up = parse(args[2], sender)
-                        val down = if (args.size > 4) parse(args[3], sender) else 0
-                        val materials = if (args.size > 4) fetchMaterials(args[4], sender) else fetchMaterials(args[3], sender)
-
-                        if (radius <= 0 || up <= 0 || materials.isEmpty()) return true
-
-                        sender.teleport(loc.add(0.0, up.toDouble() + 1, 0.0))
-                        TaskHandler.addTask(CylinderTask(world.uid, midPoint, radius, up, down, materials), sender)
-                    }
-                    "tower", "t" -> {
-                        if (args.size <= 3) {
-                            sender.sendMessage("tower|t <radius> <up> (<down>) <blockName:blockDataIndex;...>")
-                            return true
-                        }
-
-                        val loc = sender.location
-                        val world = loc.world
-
-                        val locX = loc.blockX
-                        val locY = loc.blockY
-                        val locZ = loc.blockZ
-
-                        val midPoint = Vector(locX, locY, locZ)
-                        val radius = parse(args[1], sender)
-                        val up = parse(args[2], sender)
-                        val down = if (args.size > 4) parse(args[3], sender) else 0
-                        val materials = if (args.size > 4) fetchMaterials(args[4], sender) else fetchMaterials(args[3], sender)
-
-                        if (radius <= 0 || up <= 0 || materials.isEmpty()) return true
-
-                        sender.teleport(loc.add(0.0, up.toDouble() + 1, 0.0))
-                        TaskHandler.addTask(TowerTask(world.uid, midPoint, radius, up, down, materials), sender)
-                    }
-                /* Hollow */
-                    "hollow_sphere", "hs" -> {
-                        if (args.size <= 2) {
-                            sender.sendMessage("hollow_sphere|hs <radius> <blockName:blockDataIndex;...>")
-                            return true
-                        }
-
-                        val loc = sender.location
-                        val world = loc.world
-
-                        val locX = loc.blockX
-                        val locY = loc.blockY
-                        val locZ = loc.blockZ
-
-                        val midPoint = Vector(locX, locY, locZ)
-                        val radius = parse(args[1], sender)
-                        val materials = fetchMaterials(args[2], sender)
-
-                        if (radius <= 0 || materials.isEmpty()) return true
-
-                        sender.teleport(loc.add(0.0, radius.toDouble() + 1, 0.0))
-                        TaskHandler.addTask(SphereTask(world.uid, midPoint, radius, materials, true), sender)
-                    }
-                    "hollow_voxel", "hv" -> {
-                        if (args.size <= 2) {
-                            sender.sendMessage("hollow_voxel|hv <radius> <blockName:blockDataIndex;...>")
-                            return true
-                        }
-
-                        val loc = sender.location
-                        val world = loc.world
-
-                        val locX = loc.blockX
-                        val locY = loc.blockY
-                        val locZ = loc.blockZ
-
-                        val midPoint = Vector(locX, locY, locZ)
-                        val radius = parse(args[1], sender)
-                        val materials = fetchMaterials(args[2], sender)
-
-                        if (radius <= 0 || materials.isEmpty()) return true
-
-                        sender.teleport(loc.add(0.0, radius.toDouble() + 1, 0.0))
-                        TaskHandler.addTask(VoxelTask(world.uid, midPoint, radius, materials, true), sender)
-                    }
-                    "hollow_cylinder", "hc" -> {
-                        if (args.size <= 3) {
-                            sender.sendMessage("hollow_cylinder|hc <radius> <up> (<down>) <blockName:blockDataIndex;...>")
-                            return true
-                        }
-
-                        val loc = sender.location
-                        val world = loc.world
-
-                        val locX = loc.blockX
-                        val locY = loc.blockY
-                        val locZ = loc.blockZ
-
-                        val midPoint = Vector(locX, locY, locZ)
-                        val radius = parse(args[1], sender)
-                        val up = parse(args[2], sender)
-                        val down = if (args.size > 4) parse(args[3], sender) else 0
-                        val materials = if (args.size > 4) fetchMaterials(args[4], sender) else fetchMaterials(args[3], sender)
-
-                        if (radius <= 0 || up <= 0 || materials.isEmpty()) return true
-
-                        sender.teleport(loc.add(0.0, up.toDouble() + 1, 0.0))
-                        TaskHandler.addTask(CylinderTask(world.uid, midPoint, radius, up, down, materials, true), sender)
-                    }
-                    "hollow_tower", "ht" -> {
-                        if (args.size <= 3) {
-                            sender.sendMessage("hollow_tower|ht <radius> <up> (<down>) <blockName:blockDataIndex;...>")
-                            return true
-                        }
-
-                        val loc = sender.location
-                        val world = loc.world
-
-                        val locX = loc.blockX
-                        val locY = loc.blockY
-                        val locZ = loc.blockZ
-
-                        val midPoint = Vector(locX, locY, locZ)
-                        val radius = parse(args[1], sender)
-                        val up = parse(args[2], sender)
-                        val down = if (args.size > 4) parse(args[3], sender) else 0
-                        val materials = if (args.size > 4) fetchMaterials(args[4], sender) else fetchMaterials(args[3], sender)
-
-                        if (radius <= 0 || up <= 0 || materials.isEmpty()) return true
-
-                        sender.teleport(loc.add(0.0, up.toDouble() + 1, 0.0))
-                        TaskHandler.addTask(TowerTask(world.uid, midPoint, radius, up, down, materials, true), sender)
-                    }
-                /* Manual */
-                /* Clipboard */
-                // general
-                // todo set
-
-                // clipboard
-                // todo copy
-                // todo cut
-                // todo paste
-                    "bps" -> {
-                        if (args.size <= 1) {
-                            sender.sendMessage("bps <BPS>")
-                            sender.sendMessage("Current BPS: ${TaskHandler.BPS}")
-                            return true
-                        }
-
-                        val bps = parse(args[1], sender)
-                        TaskHandler.BPS = bps
-                    }
-                    else -> sender.sendMessage("Unknown!")
-                }
-
-            } else {
-                Logger.debug("Command line command access for VoxelEdit is limited [Currently no commands implemented! :( ]")
+                if (sender is Player) sender.sendMessage(msg) else Logger.warning(msg)
+                Logger.exception(e)
+                return@runTaskAsynchronously
             }
+        })
 
-            return true
-        } catch (e: Exception) {
-            val msg = "Failed during command execution! [$e]"
-
-            if (sender is Player) sender.sendMessage(msg) else Logger.warning(msg)
-            Logger.exception(e)
-            return false
-        }
+        return true
     }
 
     private fun _parse(input: String, assert: Boolean = true): Int {
@@ -285,7 +603,7 @@ class CommandHandler : BukkitCommand("voxeledit") {
         return output
     }
 
-    private fun parse(input: String, player: Player, assert: Boolean = false): Int {
+    private fun parse(input: String, player: Player, assert: Boolean = true): Int {
         try {
             return _parse(input, assert)
         } catch (e: NumberFormatException) {
@@ -297,30 +615,36 @@ class CommandHandler : BukkitCommand("voxeledit") {
         return 0
     }
 
-    private fun fetchMaterials(input: String, player: Player): Array<Triple<Material, Byte, Boolean>> {
-        var output: Array<Triple<Material, Byte, Boolean>> = arrayOf()
+    private fun fetchMaterials(input: String, player: Player): Array<Bundle<Material, Byte>> {
+        var output: Array<Bundle<Material, Byte>> = arrayOf()
 
         val literalMaterials = input.split(";")
         literalMaterials.forEach {
             var s = it
 
             val material: Material
-            var mod: Byte = 0
-            var physics = true
-
-            if (s.endsWith('!')) {
-                physics = false
-                s = s.substring(0, s.length + 1)
-            }
+            var mod: Byte = -1
 
             val index = s.indexOf(':')
             if (index > 0) {
-                mod = parse(s.substring(index + 1, s.length), player).toByte()
+                mod = try {
+                    var i = Integer.parseInt(s.substring(index + 1, s.length))
+                    if (i < 0) {
+                        player.sendMessage("The block data index must not be lower than zero! [Setting to zero for '$it']")
+                        i = 0
+                    }
+
+                    i.toByte()
+                } catch (e: NumberFormatException) {
+                    player.sendMessage("The block data index must be a number! [Setting to zero for '$it']")
+
+                    0.toByte()
+                }
                 s = s.substring(0, index)
             }
 
             material = Material.matchMaterial(s)
-            output += Triple(material, mod, physics)
+            output += Bundle(material, mod)
         }
 
         return output

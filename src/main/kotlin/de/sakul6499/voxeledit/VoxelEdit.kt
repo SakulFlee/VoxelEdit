@@ -33,13 +33,19 @@ class VoxelEdit {
 
             val commandHandler = CommandHandler()
             commandMap.register(commandHandler.name, "voxeledit:${commandHandler.name}", commandHandler)
-        } catch(e: NoSuchFieldException) {
+        } catch (e: NoSuchFieldException) {
             Logger.error("Failed to register command!")
-        } catch(e: NullPointerException) {
+        } catch (e: NullPointerException) {
             Logger.error("Failed to register command!")
-        } catch(e: SecurityException) {
+        } catch (e: SecurityException) {
             Logger.error("Failed to register command!")
         }
+
+        // register VE-Mode event handler
+        Bukkit.getPluginManager().registerEvents(VEMode, javaPlugin)
+
+        // register VE-Tool event handler
+        Bukkit.getPluginManager().registerEvents(VETool, javaPlugin)
 
         Logger.info("Started VoxelEdit!")
     }

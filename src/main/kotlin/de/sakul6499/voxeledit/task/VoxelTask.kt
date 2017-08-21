@@ -1,51 +1,73 @@
+@file:Suppress("DEPRECATION")
+
 package de.sakul6499.voxeledit.task
 
 import de.framework.api.Bundle
-import org.bukkit.Bukkit
 import org.bukkit.Material
+import org.bukkit.World
 import org.bukkit.util.Vector
 import java.util.*
 
-class VoxelTask(private val worldUID: UUID, midPoint: Vector, radius: Int, materials: Array<Triple<Material, Byte, Boolean>>, hollow: Boolean = false) : Task {
-    override var id: Int = 0
-    override var loops: Int = 0
+class VoxelTask(private val world: World, midPoint: Vector, radius: Int, materials: Array<Bundle<Material, Byte>>, hollow: Boolean = false) : Task {
     override val overallBlocksToProcess: Int
+
+    // Height
+    private var yBegin: Int = midPoint.blockY - radius
+    private var yEnd: Int = midPoint.blockY + radius
 
     private val xBegin: Int = midPoint.blockX - radius
     private val xEnd: Int = midPoint.blockX + radius
-    private val yBegin: Int = midPoint.blockY - radius
-    private val yEnd: Int = midPoint.blockY + radius
+
     private val zBegin: Int = midPoint.blockZ - radius
     private val zEnd: Int = midPoint.blockZ + radius
 
-    private val queue = mutableListOf<Bundle<Vector, Triple<Material, Byte, Boolean>>>()
+    private val queue = mutableListOf<Triple<Vector, Material, Byte>>()
+    private val undo = mutableListOf<Triple<Vector, Material, Byte>>()
 
     init {
-//        if (materials.isEmpty()) throw IllegalStateException("Materials empty!")
-
         val random = Random()
 
-        for (y in yBegin..yEnd) {
+        if (yBegin > 255) yBegin = 255
+        if (yEnd < 0) yEnd = 0
+
+        materials.forEach {
+            if (it.first == null) throw IllegalStateException("Vector is null!")
+            if (it.second == null) throw IllegalStateException("Material is null!")
+        }
+
+        for (y in yEnd downTo yBegin) {
             if (hollow) {
                 for (x in xBegin..xEnd) {
-                    queue.add(Bundle(Vector(x, y, zBegin), materials[random.nextInt(materials.size)]))
-                    queue.add(Bundle(Vector(x, y, zEnd), materials[random.nextInt(materials.size)]))
+                    var bundle = materials[random.nextInt(materials.size)]
+                    queue.add(Triple(Vector(x, y, zBegin), bundle.first!!, bundle.second!!))
 
-                    if (y == yBegin || y == yEnd) for (z in xBegin..xEnd) queue.add(Bundle(Vector(x, y, z), materials[random.nextInt(materials.size)]))
+                    bundle = materials[random.nextInt(materials.size)]
+                    queue.add(Triple(Vector(x, y, zEnd), bundle.first!!, bundle.second!!))
                 }
 
                 for (z in zBegin..zEnd) {
-                    queue.add(Bundle(Vector(xBegin, y, z), materials[random.nextInt(materials.size)]))
-                    queue.add(Bundle(Vector(xEnd, y, z), materials[random.nextInt(materials.size)]))
+                    var bundle = materials[random.nextInt(materials.size)]
+                    queue.add(Triple(Vector(xBegin, y, z), bundle.first!!, bundle.second!!))
 
-                    if (y == yBegin || y == yEnd) for (x in xBegin..xEnd) queue.add(Bundle(Vector(x, y, z), materials[random.nextInt(materials.size)]))
+                    bundle = materials[random.nextInt(materials.size)]
+                    queue.add(Triple(Vector(xEnd, y, z), bundle.first!!, bundle.second!!))
+                }
+
+                if (y == yBegin || y == yEnd) {
+                    for (x in xBegin..xEnd) {
+                        for (z in zBegin..zEnd) {
+                            val bundle = materials[random.nextInt(materials.size)]
+                            queue.add(Triple(Vector(x, y, z), bundle.first!!, bundle.second!!))
+                        }
+                    }
                 }
             } else {
                 for (x in xBegin..xEnd) {
                     for (z in zBegin..zEnd) {
                         val currentPosition = Vector(x, y, z)
+                        val bundle = materials[random.nextInt(materials.size)]
 
-                        queue.add(Bundle(currentPosition, materials[random.nextInt(materials.size)]))
+                        queue.add(Triple(currentPosition, bundle.first!!, bundle.second!!))
                     }
                 }
             }
@@ -54,24 +76,9 @@ class VoxelTask(private val worldUID: UUID, midPoint: Vector, radius: Int, mater
         overallBlocksToProcess = count()
     }
 
-    override fun count(): Int = queue.size
+    override fun count(undo: Boolean): Int = if (undo) this.undo.size else queue.size
 
-    override fun process(): Boolean {
-        if (queue.size <= 0) return false
-        val bundle = queue[0]
-        queue.removeAt(0)
+    override fun process(): Boolean = DefaultTaskActions.defaultProcess(queue, undo, world)
 
-        val world = Bukkit.getWorld(worldUID)
-
-        if (bundle.first == null) throw IllegalStateException("Vector is null!")
-        if (bundle.second == null) throw IllegalStateException("Material is null!")
-
-        val block = bundle.first!!.toLocation(world).block
-        if (block.type != bundle.second!!) {
-            block.setType(bundle.second!!.first, bundle.second!!.third)
-            block.data = bundle.second!!.second
-        }
-
-        return true
-    }
+    override fun undo(): Boolean = DefaultTaskActions.defaultUndo(queue, undo, world)
 }
