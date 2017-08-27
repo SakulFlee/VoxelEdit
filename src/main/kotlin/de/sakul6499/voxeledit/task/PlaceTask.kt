@@ -9,7 +9,7 @@ import org.bukkit.World
 import org.bukkit.util.Vector
 import java.util.*
 
-class PosSelectTask(private val world: World, pos1: Vector, pos2: Vector, materials: Array<Bundle<Material, Byte>>, hollow: Boolean = false) : Task {
+class PlaceTask(private val world: World, pos1: Vector, pos2: Vector, materials: Array<Bundle<Material, Byte>>, hollow: Boolean = false) : Task {
     override val overallBlocksToProcess: Int
 
     private val queue = mutableListOf<Triple<Vector, Material, Byte>>()

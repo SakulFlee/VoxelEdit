@@ -11,20 +11,20 @@ import java.util.*
 class SphereTask(private val world: World, midPoint: Vector, radius: Int, materials: Array<Bundle<Material, Byte>>, hollow: Boolean = false) : Task {
     override val overallBlocksToProcess: Int
 
-    // Height
-    private var yBegin: Int = midPoint.blockY - radius
-    private var yEnd: Int = midPoint.blockY + radius
-
-    private val xBegin: Int = midPoint.blockX - radius
-    private val xEnd: Int = midPoint.blockX + radius
-
-    private val zBegin: Int = midPoint.blockZ - radius
-    private val zEnd: Int = midPoint.blockZ + radius
-
     private val queue = mutableListOf<Triple<Vector, Material, Byte>>()
     private val undo = mutableListOf<Triple<Vector, Material, Byte>>()
 
     init {
+        // Height
+        var yBegin: Int = midPoint.blockY - radius
+        var yEnd: Int = midPoint.blockY + radius
+
+        val xBegin: Int = midPoint.blockX - radius
+        val xEnd: Int = midPoint.blockX + radius
+
+        val zBegin: Int = midPoint.blockZ - radius
+        val zEnd: Int = midPoint.blockZ + radius
+
         val random = Random()
 
         if (yBegin > 255) yBegin = 255

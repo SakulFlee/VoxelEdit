@@ -9,7 +9,7 @@ object TaskHandler {
     /**
      * Blocks Per Second
      */
-    var BPS: Int = 2048
+    var BPS: Int = 4096
 
     private var idCounter = 0
     private val tasks: MutableList<TaskData> = mutableListOf()
@@ -50,8 +50,8 @@ object TaskHandler {
         }, 0, 20)
     }
 
-    fun addTask(t: Task, notifier: Player): Int {
-        val taskData = TaskData(t, ++idCounter, notifier)
+    fun addTask(task: Task, notifier: Player): Int {
+        val taskData = TaskData(task, ++idCounter, notifier)
 
         notifier.sendMessage("Added task #${taskData.id}!")
         notifier.sendMessage("Block to process: ${taskData.task.overallBlocksToProcess}")

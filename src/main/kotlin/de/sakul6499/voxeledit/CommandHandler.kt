@@ -3,6 +3,7 @@ package de.sakul6499.voxeledit
 import de.framework.api.Bundle
 import de.framework.logger.Logger
 import de.sakul6499.voxeledit.clipboard.Clipboard
+import de.sakul6499.voxeledit.clipboard.SphereSelection
 import de.sakul6499.voxeledit.task.*
 import org.bukkit.Bukkit
 import org.bukkit.Material
@@ -498,7 +499,45 @@ class CommandHandler : BukkitCommand("voxeledit") {
 
                             Clipboard.actionReplace(sender, filter, replace, hollow)
                         }
-                    /* Clipboard */
+                    /* Clipboard - Select */
+                        "select", "se" -> {
+                            if (args.size <= 1) {
+                                sender.sendMessage("select|se <shape> (...)")
+                                return@runTaskAsynchronously
+                            }
+
+                            when (args[1]) {
+                                "sphere", "s" -> {
+                                    if (args.size <= 2) {
+                                        sender.sendMessage("select|se sphere|s radius")
+                                        return@runTaskAsynchronously
+                                    }
+
+                                    val loc = sender.location
+                                    val world = loc.world
+
+                                    val locX = loc.blockX
+                                    val locY = loc.blockY
+                                    val locZ = loc.blockZ
+
+                                    val midPoint = Vector(locX, locY, locZ)
+                                    val radius: Int = try {
+                                        val i = Integer.parseInt(args[2]); if (i <= 0) {
+                                            sender.sendMessage("Radius must be greater than zero!"); return@runTaskAsynchronously
+                                        } else i
+                                    } catch (e: NumberFormatException) {
+                                        sender.sendMessage("Radius must be a number!"); return@runTaskAsynchronously
+                                    }
+
+                                    val sphereSelection = SphereSelection(world, midPoint, radius, false)
+                                    Clipboard.addSelection(sphereSelection, sender)
+                                }
+                                else -> {
+                                    sender.sendMessage("Invalid form-arg")
+                                    return@runTaskAsynchronously
+                                }
+                            }
+                        }
                     /* VE-Tool */
                         "tool" -> {
                             if (args.size <= 3) {
