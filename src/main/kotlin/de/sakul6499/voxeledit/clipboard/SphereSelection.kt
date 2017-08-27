@@ -32,10 +32,10 @@ class SphereSelection(private val world: World, private val midPoint: Vector, pr
             for (x in xBegin..xEnd) {
                 for (z in zBegin..zEnd) {
                     val currentPosition = Vector(x, y, z)
-                    val distance = midPoint.distance(currentPosition).toInt()
+                    val distance = midPoint.distance(currentPosition)
 
                     if (hollow) {
-                        if (distance == radius) selectionQueue += currentPosition
+                        if (distance == radius.toDouble()) selectionQueue += currentPosition
                     } else {
                         if (distance <= radius) selectionQueue += currentPosition
                     }
@@ -61,4 +61,22 @@ class SphereSelection(private val world: World, private val midPoint: Vector, pr
     }
 
     override fun data(): Bundle<World, Array<Triple<Vector, Material, Byte>>> = Bundle(world, data)
+
+    override fun dataWithUpdate(position: Vector): Bundle<World, Array<Triple<Vector, Material, Byte>>> {
+        var updated: Array<Triple<Vector, Material, Byte>> = arrayOf()
+
+        val dx = position.blockX - midPoint.blockX
+        val dz = position.blockZ - midPoint.blockZ
+        val dy = position.blockY - midPoint.blockY
+
+        data.forEach {
+            val x = it.first.blockX + dx
+            val z = it.first.blockZ + dz
+            val y = it.first.blockY + dy
+
+            updated += Triple(Vector(x, y, z), it.second, it.third)
+        }
+
+        return Bundle(world, updated)
+    }
 }

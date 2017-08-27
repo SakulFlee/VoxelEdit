@@ -49,7 +49,7 @@ object Clipboard {
                         it.loops++
                     }
 
-                    it.notifier.sendMessage("#${it.id} BPS: ${TaskHandler.BPS} SBPT: $sbpt [${timeLeft}s - ${it.selection.count()}b]")
+                    it.notifier.sendMessage("#${it.id} SBPS: ${TaskHandler.BPS} SBPT: $sbpt [${timeLeft}s - ${it.selection.count()}b]")
                 }
             } else {
                 Thread.sleep(1000)
@@ -62,11 +62,14 @@ object Clipboard {
                 val ibpt = IBPS / insertion.size
 
                 insertion.forEach {
-                    val timeLeft = (it.blocks - it.loops) / ibpt
+                    val blocksLeft = it.blocks - it.loops
+                    val timeLeft = blocksLeft / ibpt
+
+                    it.notifier.sendMessage("#${it.id} IBPS: ${TaskHandler.BPS} IBPT: $ibpt [${timeLeft}s - ${blocksLeft}b]")
 
                     for (i in 0..ibpt) {
                         if (it.undo) {
-                            if (!it.undo) {
+                            if (!it.undo()) {
                                 it.notifier.sendMessage("#${it.id} undo insertion task finished!")
                                 it.finished = true
                                 return@forEach
@@ -81,8 +84,6 @@ object Clipboard {
 
                         it.loops++
                     }
-
-                    it.notifier.sendMessage("#${it.id} BPS: ${TaskHandler.BPS} IBPT: $ibpt [${timeLeft}s - ${it.selection.count()}b]")
                 }
             } else {
                 Thread.sleep(1000)
@@ -105,6 +106,26 @@ object Clipboard {
         selection.notifier.sendMessage("Cancelling selection: $id")
 
         selection.canceled = true
+    }
+
+    // TODO undo insertion
+
+    fun addInsertion(selectionID: Int, notifier: Player): Int {
+        val selection = selections.firstOrNull { it.id == selectionID } ?: throw IllegalStateException("Selection with id $selectionID not found!")
+        val insertion = Insertion.fromSelection(selection.selection, notifier.location.toVector(), ++idCounter, notifier)
+
+        notifier.sendMessage("Added Insertion task #${insertion.id}!")
+        notifier.sendMessage("Blocks to process: ${insertion.blocks}")
+        insertions.add(insertion)
+
+        return insertion.id
+    }
+
+    fun cancelInsertion(id: Int) {
+        val insertion = insertions.firstOrNull { it.id == id } ?: throw IllegalStateException("Insertion with id $id not found!")
+        insertion.notifier.sendMessage("Cancelling insertion: $id")
+
+        insertion.canceled = true
     }
 
     fun pushPosition(player: Player, pos1: Vector? = null, pos2: Vector? = null, world: World? = null) {

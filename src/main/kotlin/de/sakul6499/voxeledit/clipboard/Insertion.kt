@@ -1,5 +1,6 @@
 package de.sakul6499.voxeledit.clipboard
 
+import de.framework.logger.Logger
 import de.sakul6499.voxeledit.task.DefaultTaskActions
 import org.bukkit.Material
 import org.bukkit.World
@@ -11,7 +12,17 @@ class Insertion(val world: World, val data: MutableList<Triple<Vector, Material,
 
     private val _undo = mutableListOf<Triple<Vector, Material, Byte>>()
 
-    constructor(selection: Selection, id: Int, notifier: Player, loops: Int = 0, finished: Boolean = false, canceled: Boolean = false) : this(selection.data().first!!, selection.data().second!!.toMutableList(), id, notifier, loops, finished, canceled)
+    companion object {
+        fun fromSelection(selection: Selection, position: Vector, id: Int, notifier: Player, loops: Int = 0, finished: Boolean = false, canceled: Boolean = false): Insertion {
+            val data = selection.dataWithUpdate(position)
+            return Insertion(data.first!!, data.second!!.toMutableList(), id, notifier, loops, finished, canceled)
+        }
+    }
+
+    init {
+        Logger.debug("Data Size: ${data.size}")
+        Logger.debug("Blocks: $blocks")
+    }
 
     fun task() = DefaultTaskActions.defaultProcess(data, _undo, world)
 

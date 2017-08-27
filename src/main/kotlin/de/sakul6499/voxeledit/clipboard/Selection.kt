@@ -12,4 +12,6 @@ interface Selection {
 
     fun select(): Boolean
     fun data(): Bundle<World, Array<Triple<Vector, Material, Byte>>>
+
+    fun dataWithUpdate(position: Vector): Bundle<World, Array<Triple<Vector, Material, Byte>>>
 }

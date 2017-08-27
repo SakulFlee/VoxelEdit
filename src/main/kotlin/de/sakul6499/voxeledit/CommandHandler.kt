@@ -538,6 +538,25 @@ class CommandHandler : BukkitCommand("voxeledit") {
                                 }
                             }
                         }
+                        "insert", "i" -> {
+                            if (args.size <= 1) {
+                                sender.sendMessage("insert|i <selection ID>")
+                                return@runTaskAsynchronously
+                            }
+
+                            val selectionID: Int = try {
+                                val i = Integer.parseInt(args[1])
+                                if (i <= 0) {
+                                    sender.sendMessage("Selection ID must be greater than zero!")
+                                    return@runTaskAsynchronously
+                                } else i
+                            } catch (e: NumberFormatException) {
+                                sender.sendMessage("Selection ID must be a number!")
+                                return@runTaskAsynchronously
+                            }
+
+                            Clipboard.addInsertion(selectionID, sender)
+                        }
                     /* VE-Tool */
                         "tool" -> {
                             if (args.size <= 3) {
