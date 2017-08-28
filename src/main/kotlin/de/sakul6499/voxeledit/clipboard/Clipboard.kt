@@ -3,7 +3,7 @@ package de.sakul6499.voxeledit.clipboard
 import de.framework.api.Bundle
 import de.framework.api.Quad
 import de.sakul6499.voxeledit.VoxelEdit
-import de.sakul6499.voxeledit.task.PlaceTask
+import de.sakul6499.voxeledit.task.PosTask
 import de.sakul6499.voxeledit.task.ReplacePosTask
 import de.sakul6499.voxeledit.task.TaskHandler
 import org.bukkit.Bukkit
@@ -121,6 +121,11 @@ object Clipboard {
         return insertion.id
     }
 
+    fun addPosSelection(notifier: Player, hollow: Boolean = false): Int {
+        val entry = getEntryPos(notifier) ?: return -1
+        return addSelection(PosSelection(entry.fourth!!, entry.second!!, entry.second!!, hollow), notifier)
+    }
+
     fun cancelInsertion(id: Int) {
         val insertion = insertions.firstOrNull { it.id == id } ?: throw IllegalStateException("Insertion with id $id not found!")
         insertion.notifier.sendMessage("Cancelling insertion: $id")
@@ -142,26 +147,26 @@ object Clipboard {
         }
     }
 
-    fun actionPlace(player: Player, materials: Array<Bundle<Material, Byte>>, hollow: Boolean = false) {
-        // check for selectors
+    private fun getEntryPos(player: Player): Quad<Player, Vector, Vector, World>? {
         val entry = pos.firstOrNull { it.first == player }
         if (entry?.second == null || entry.third == null) {
             player.sendMessage("You do not have clipboard yet (try selecting something) OR a position mismatch occurred!")
-            return
+            return null
         }
 
+        return entry
+    }
+
+    fun actionPlace(player: Player, materials: Array<Bundle<Material, Byte>>, hollow: Boolean = false) {
+        val entry = getEntryPos(player) ?: return
+
         player.sendMessage("Preparing place action ...")
-        TaskHandler.addTask(PlaceTask(entry.fourth!!, entry.second!!, entry.third!!, materials, hollow), player)
+        TaskHandler.addTask(PosTask(entry.fourth!!, entry.second!!, entry.third!!, materials, hollow), player)
         player.sendMessage("Place task submitted!")
     }
 
     fun actionReplace(player: Player, filter: Array<Bundle<Material, Byte>>, replace: Array<Bundle<Material, Byte>>, hollow: Boolean = false) {
-        // check for selectors
-        val entry = pos.firstOrNull { it.first == player }
-        if (entry?.second == null || entry.third == null) {
-            player.sendMessage("You do not have clipboard yet (try selecting something) OR a position mismatch occurred!")
-            return
-        }
+        val entry = getEntryPos(player) ?: return
 
         player.sendMessage("Preparing replace action ...")
         TaskHandler.addTask(ReplacePosTask(entry.fourth!!, entry.second!!, entry.third!!, filter, replace, hollow), player)

@@ -3,17 +3,16 @@
 package de.sakul6499.voxeledit.clipboard
 
 import de.framework.api.Bundle
-import de.framework.logger.Logger
 import org.bukkit.Material
 import org.bukkit.World
 import org.bukkit.util.Vector
 
-class SphereSelection(private val world: World, private val midPoint: Vector, radius: Int, hollow: Boolean = false) : Selection {
+class CylinderSelection(private val world: World, private val midPoint: Vector, radius: Int, up: Int, down: Int, hollow: Boolean = false) : Selection {
     override val blocks: Int
 
     // Height
-    private var yBegin: Int = midPoint.blockY - radius
-    private var yEnd: Int = midPoint.blockY + radius
+    private var yBegin: Int = midPoint.blockY - down
+    private var yEnd: Int = midPoint.blockY + up
 
     private val xBegin: Int = midPoint.blockX - radius
     private val xEnd: Int = midPoint.blockX + radius
@@ -32,10 +31,10 @@ class SphereSelection(private val world: World, private val midPoint: Vector, ra
             for (x in xBegin..xEnd) {
                 for (z in zBegin..zEnd) {
                     val currentPosition = Vector(x, y, z)
-                    val distance = midPoint.distance(currentPosition)
+                    val distance = Vector(midPoint.blockX, y, midPoint.blockZ).distance(currentPosition).toInt()
 
                     if (hollow) {
-                        if (distance == radius.toDouble()) selectionQueue += currentPosition
+                        if (distance == radius) selectionQueue += currentPosition
                     } else {
                         if (distance <= radius) selectionQueue += currentPosition
                     }
@@ -44,7 +43,6 @@ class SphereSelection(private val world: World, private val midPoint: Vector, ra
         }
 
         blocks = selectionQueue.size
-        Logger.debug("Blocks: $blocks")
     }
 
     override fun count(): Int = blocks - data.size
@@ -79,4 +77,5 @@ class SphereSelection(private val world: World, private val midPoint: Vector, ra
 
         return Bundle(world, updated)
     }
+
 }

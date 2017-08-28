@@ -3,13 +3,12 @@
 package de.sakul6499.voxeledit.task
 
 import de.framework.api.Bundle
-import de.framework.logger.Logger
 import org.bukkit.Material
 import org.bukkit.World
 import org.bukkit.util.Vector
 import java.util.*
 
-class PlaceTask(private val world: World, pos1: Vector, pos2: Vector, materials: Array<Bundle<Material, Byte>>, hollow: Boolean = false) : Task {
+class PosTask(private val world: World, pos1: Vector, pos2: Vector, materials: Array<Bundle<Material, Byte>>, hollow: Boolean = false) : Task {
     override val overallBlocksToProcess: Int
 
     private val queue = mutableListOf<Triple<Vector, Material, Byte>>()
@@ -51,10 +50,6 @@ class PlaceTask(private val world: World, pos1: Vector, pos2: Vector, materials:
             zBegin = pos1.blockZ
             zEnd = pos2.blockZ
         }
-
-        Logger.debug("Y $yBegin -> $yEnd")
-        Logger.debug("X $xBegin -> $xEnd")
-        Logger.debug("Z $zBegin -> $zEnd")
 
         materials.forEach {
             if (it.first == null) throw IllegalStateException("Vector is null!")

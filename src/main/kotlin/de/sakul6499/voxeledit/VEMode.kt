@@ -1,22 +1,114 @@
 package de.sakul6499.voxeledit
 
+import de.framework.logger.Logger
+import de.sakul6499.voxeledit.mesh.MeshHandler
 import org.bukkit.ChatColor
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.player.AsyncPlayerChatEvent
+import org.bukkit.util.Vector
 
 object VEMode : Listener {
 
     private val inMode: MutableList<Player> = mutableListOf()
+    private val inAssist: MutableList<Player> = mutableListOf()
+    private val assistMap: MutableList<Triple<Player, Vector, String>> = mutableListOf()
 
     @Suppress("UNUSED")
     @EventHandler
     fun onChat(event: AsyncPlayerChatEvent) {
         inMode.filter { it == event.player }.forEach {
-            it.performCommand("/# ${event.message}")
-            event.recipients.clear()
+            val split = event.message.split(" ")
+            Logger.debug("###")
+            split.forEach {
+                Logger.debug(it)
+            }
+            Logger.debug("###")
 
+            if (inAssist.any { event.player == it }) {
+                when (split[0].toLowerCase()) {
+                    "assist", "a" -> {
+                        event.player.sendMessage("LEAVING ASSIST MODE")
+                        inAssist.remove(event.player)
+                    }
+                    "confirm", "c" -> {
+                        val a = assistMap.find { (first) -> first == it }
+                        if (a == null) {
+                            it.sendMessage("Nothing committed!")
+                        } else {
+                            MeshHandler.removeMesh(it.uniqueId)
+                            it.teleport(a.second.toLocation(it.world))
+                            it.performCommand("/# ${a.third}")
+                        }
+                    }
+                // sphere|s <radius> <blockName:blockDataIndex;...>
+                    "sphere", "s" -> {
+                        if (split.size <= 2) {
+                            println("Invalid syntax ...")
+                            return
+                        }
+
+                        assistMap.removeIf { (first) -> first == it }
+                        assistMap.add(Triple(it, it.location.toVector(), event.message))
+
+                        val radius: Int = try {
+                            val i = Integer.parseInt(split[1]); if (i <= 0) {
+                                it.sendMessage("Radius must be greater than zero!"); return
+                            } else i
+                        } catch (e: NumberFormatException) {
+                            it.sendMessage("Radius must be a number!"); return
+                        }
+
+                        Logger.debug("Assisting: $it -> ${event.message}")
+                        val mesh = MeshHandler.createMesh(it.uniqueId)
+
+                        var vecs = arrayOf<Vector>()
+                        // ABSTRACT MATH
+                        val midPoint = event.player.location.toVector()
+                        val w = event.player.world
+
+                        var yBegin: Int = midPoint.blockY - radius
+                        var yEnd: Int = midPoint.blockY + radius
+
+                        val xBegin: Int = midPoint.blockX - radius
+                        val xEnd: Int = midPoint.blockX + radius
+
+                        val zBegin: Int = midPoint.blockZ - radius
+                        val zEnd: Int = midPoint.blockZ + radius
+
+                        if (yBegin > 255) yBegin = 255
+                        if (yEnd < 0) yEnd = 0
+
+                        for (y in yEnd downTo yBegin) {
+                            for (x in xBegin..xEnd) {
+                                for (z in zBegin..zEnd) {
+                                    val currentPosition = Vector(x, y, z)
+                                    val distance = midPoint.distance(currentPosition).toInt()
+                                    if (distance == radius) vecs += currentPosition
+                                }
+                            }
+                        }
+                        // ABSTRACT MATH
+
+                        mesh.update(w, vecs)
+                    }
+                    else -> {
+                        it.sendMessage("No assist mapping for entry / input found!")
+                        it.performCommand("/# ${event.message}")
+                    }
+                }
+            } else {
+                when (split[0].toLowerCase()) {
+                    "assist", "a" -> {
+                        event.player.sendMessage("ENTERING ASSIST MODE")
+                        inAssist.add(event.player)
+                    }
+                    else -> it.performCommand("/# ${event.message}")
+                }
+            }
+
+            event.recipients.clear()
             event.isCancelled = true
         }
 

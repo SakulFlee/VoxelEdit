@@ -2,8 +2,7 @@ package de.sakul6499.voxeledit
 
 import de.framework.api.Bundle
 import de.framework.logger.Logger
-import de.sakul6499.voxeledit.clipboard.Clipboard
-import de.sakul6499.voxeledit.clipboard.SphereSelection
+import de.sakul6499.voxeledit.clipboard.*
 import de.sakul6499.voxeledit.task.*
 import org.bukkit.Bukkit
 import org.bukkit.Material
@@ -502,7 +501,12 @@ class CommandHandler : BukkitCommand("voxeledit") {
                     /* Clipboard - Select */
                         "select", "se" -> {
                             if (args.size <= 1) {
-                                sender.sendMessage("select|se <shape> (...)")
+                                sender.sendMessage("[select|se options]:")
+                                sender.sendMessage("select|se sphere|s radius")
+                                sender.sendMessage("select|se voxel|v radius")
+                                sender.sendMessage("select|se cylinder|c <radius> <up> (<down>)")
+                                sender.sendMessage("select|se tower|t <radius> <up> (<down>)")
+                                sender.sendMessage("select|se pos|p")
                                 return@runTaskAsynchronously
                             }
 
@@ -529,11 +533,114 @@ class CommandHandler : BukkitCommand("voxeledit") {
                                         sender.sendMessage("Radius must be a number!"); return@runTaskAsynchronously
                                     }
 
-                                    val sphereSelection = SphereSelection(world, midPoint, radius, false)
-                                    Clipboard.addSelection(sphereSelection, sender)
+                                    val selection = SphereSelection(world, midPoint, radius, false)
+                                    Clipboard.addSelection(selection, sender)
+                                }
+                                "voxel", "v" -> {
+                                    if (args.size <= 2) {
+                                        sender.sendMessage("select|se voxel|v radius")
+                                        return@runTaskAsynchronously
+                                    }
+
+                                    val loc = sender.location
+                                    val world = loc.world
+
+                                    val locX = loc.blockX
+                                    val locY = loc.blockY
+                                    val locZ = loc.blockZ
+
+                                    val midPoint = Vector(locX, locY, locZ)
+                                    val radius: Int = try {
+                                        val i = Integer.parseInt(args[2]); if (i <= 0) {
+                                            sender.sendMessage("Radius must be greater than zero!"); return@runTaskAsynchronously
+                                        } else i
+                                    } catch (e: NumberFormatException) {
+                                        sender.sendMessage("Radius must be a number!"); return@runTaskAsynchronously
+                                    }
+
+                                    val selection = VoxelSelection(world, midPoint, radius, false)
+                                    Clipboard.addSelection(selection, sender)
+                                }
+                                "cylinder", "c" -> {
+                                    if (args.size <= 3) {
+                                        sender.sendMessage("select|se cylinder|c <radius> <up> (<down>)")
+                                        return@runTaskAsynchronously
+                                    }
+
+                                    val loc = sender.location
+                                    val world = loc.world
+
+                                    val locX = loc.blockX
+                                    val locY = loc.blockY
+                                    val locZ = loc.blockZ
+
+                                    val midPoint = Vector(locX, locY, locZ)
+                                    val radius: Int = try {
+                                        val i = Integer.parseInt(args[2]); if (i <= 0) {
+                                            sender.sendMessage("Radius must be greater than zero!"); return@runTaskAsynchronously
+                                        } else i
+                                    } catch (e: NumberFormatException) {
+                                        sender.sendMessage("Radius must be a number!"); return@runTaskAsynchronously
+                                    }
+                                    val up: Int = try {
+                                        Integer.parseInt(args[3])
+                                    } catch (e: NumberFormatException) {
+                                        sender.sendMessage("Up must be a number!"); return@runTaskAsynchronously
+                                    }
+                                    val down: Int = if (args.size > 5) try {
+                                        Integer.parseInt(args[4])
+                                    } catch (e: NumberFormatException) {
+                                        sender.sendMessage("Up must be a number!"); return@runTaskAsynchronously
+                                    } else 0
+
+                                    val selection = CylinderSelection(world, midPoint, radius, up, down, false)
+                                    Clipboard.addSelection(selection, sender)
+                                }
+                                "tower", "t" -> {
+                                    if (args.size <= 3) {
+                                        sender.sendMessage("select|se tower|t <radius> <up> (<down>)")
+                                        return@runTaskAsynchronously
+                                    }
+
+                                    val loc = sender.location
+                                    val world = loc.world
+
+                                    val locX = loc.blockX
+                                    val locY = loc.blockY
+                                    val locZ = loc.blockZ
+
+                                    val midPoint = Vector(locX, locY, locZ)
+                                    val radius: Int = try {
+                                        val i = Integer.parseInt(args[2]); if (i <= 0) {
+                                            sender.sendMessage("Radius must be greater than zero!"); return@runTaskAsynchronously
+                                        } else i
+                                    } catch (e: NumberFormatException) {
+                                        sender.sendMessage("Radius must be a number!"); return@runTaskAsynchronously
+                                    }
+                                    val up: Int = try {
+                                        Integer.parseInt(args[3])
+                                    } catch (e: NumberFormatException) {
+                                        sender.sendMessage("Up must be a number!"); return@runTaskAsynchronously
+                                    }
+                                    val down: Int = if (args.size > 5) try {
+                                        Integer.parseInt(args[4])
+                                    } catch (e: NumberFormatException) {
+                                        sender.sendMessage("Up must be a number!"); return@runTaskAsynchronously
+                                    } else 0
+
+                                    val selection = TowerSelection(world, midPoint, radius, up, down, false)
+                                    Clipboard.addSelection(selection, sender)
+                                }
+                                "pos", "p" -> {
+
                                 }
                                 else -> {
-                                    sender.sendMessage("Invalid form-arg")
+                                    sender.sendMessage("[select|se options]:")
+                                    sender.sendMessage("select|se sphere|s radius")
+                                    sender.sendMessage("select|se voxel|v radius")
+                                    sender.sendMessage("select|se cylinder|c <radius> <up> (<down>)")
+                                    sender.sendMessage("select|se tower|t <radius> <up> (<down>)")
+                                    sender.sendMessage("select|se pos|p")
                                     return@runTaskAsynchronously
                                 }
                             }

@@ -3,12 +3,11 @@
 package de.sakul6499.voxeledit.clipboard
 
 import de.framework.api.Bundle
-import de.framework.logger.Logger
 import org.bukkit.Material
 import org.bukkit.World
 import org.bukkit.util.Vector
 
-class SphereSelection(private val world: World, private val midPoint: Vector, radius: Int, hollow: Boolean = false) : Selection {
+class VoxelSelection(private val world: World, private val midPoint: Vector, radius: Int, hollow: Boolean = false) : Selection {
     override val blocks: Int
 
     // Height
@@ -29,22 +28,34 @@ class SphereSelection(private val world: World, private val midPoint: Vector, ra
         if (yEnd < 0) yEnd = 0
 
         for (y in yEnd downTo yBegin) {
-            for (x in xBegin..xEnd) {
-                for (z in zBegin..zEnd) {
-                    val currentPosition = Vector(x, y, z)
-                    val distance = midPoint.distance(currentPosition)
+            if (hollow) {
+                for (x in xBegin..xEnd) {
+                    selectionQueue += Vector(x, y, zBegin)
+                    selectionQueue += Vector(x, y, zEnd)
+                }
 
-                    if (hollow) {
-                        if (distance == radius.toDouble()) selectionQueue += currentPosition
-                    } else {
-                        if (distance <= radius) selectionQueue += currentPosition
+                for (z in zBegin..zEnd) {
+                    selectionQueue += Vector(xBegin, y, z)
+                    selectionQueue += Vector(xEnd, y, z)
+                }
+
+                if (y == yBegin || y == yEnd) {
+                    for (x in xBegin..xEnd) {
+                        for (z in zBegin..zEnd) {
+                            selectionQueue += Vector(x, y, z)
+                        }
+                    }
+                }
+            } else {
+                for (x in xBegin..xEnd) {
+                    for (z in zBegin..zEnd) {
+                        selectionQueue += Vector(x, y, z)
                     }
                 }
             }
         }
 
         blocks = selectionQueue.size
-        Logger.debug("Blocks: $blocks")
     }
 
     override fun count(): Int = blocks - data.size
