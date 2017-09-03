@@ -42,6 +42,8 @@ object VEMode : Listener {
                             it.performCommand("/# ${a.third}")
                         }
                     }
+                // "move" -> n w e s u d
+
                 // sphere|s <radius> <blockName:blockDataIndex;...>
                     "sphere", "s" -> {
                         if (split.size <= 2) {

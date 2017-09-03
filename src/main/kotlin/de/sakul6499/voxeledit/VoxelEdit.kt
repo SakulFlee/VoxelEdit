@@ -5,6 +5,7 @@ import de.framework.plugin.api.Init
 import de.framework.plugin.api.Plugin
 import de.framework.plugin.api.Shutdown
 import de.framework.plugin.api.Startup
+import de.sakul6499.voxeledit.command.CommandHandler
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandMap
 import org.bukkit.plugin.java.JavaPlugin

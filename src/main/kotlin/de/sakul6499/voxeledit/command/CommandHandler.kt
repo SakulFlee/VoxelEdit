@@ -1,15 +1,12 @@
-package de.sakul6499.voxeledit
+package de.sakul6499.voxeledit.command
 
 import de.framework.api.Bundle
-import de.framework.logger.Logger
-import de.sakul6499.voxeledit.clipboard.*
-import de.sakul6499.voxeledit.task.*
+import de.sakul6499.voxeledit.VoxelEdit
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.command.CommandSender
 import org.bukkit.command.defaults.BukkitCommand
 import org.bukkit.entity.Player
-import org.bukkit.util.Vector
 
 class CommandHandler : BukkitCommand("voxeledit") {
     init {
@@ -19,9 +16,24 @@ class CommandHandler : BukkitCommand("voxeledit") {
         aliases = listOf("ve", "/voxeledit", "/ve", "#", "/#")
     }
 
-    override fun execute(sender: CommandSender?, commandLabel: String?, args: Array<out String>?): Boolean {
+    override fun execute(sender: CommandSender, commandLabel: String, args: Array<out String>): Boolean {
         Bukkit.getServer().scheduler.runTaskAsynchronously(VoxelEdit.javaPlugin, {
-            try {
+            if (args.isNotEmpty()) {
+                val command = GetCommandOrNull(args[0])
+                if (command == null) {
+                    sender.sendMessage("Command not found!")
+                    return@runTaskAsynchronously
+                }
+
+                command.invoke(args.copyOfRange(1, args.size), sender)
+            } else sender.sendMessage("VoxelEdit by @Sakul6499 | Lukas")
+        })
+
+        return true
+    }
+
+    /*
+     try {
                 if (sender is Player) {
                     if (args == null || args.isEmpty() || args[0].equals("help", true) || args[0] == "?") {
                         sender.sendMessage("VoxelEdit by @Sakul6499 | Lukas!")
@@ -755,7 +767,7 @@ class CommandHandler : BukkitCommand("voxeledit") {
                     }
 
                 } else {
-                    Logger.debug("Command line command access for VoxelEdit is limited [Currently no commands implemented! :( ]")
+                    Logger.debug("CommandV1 line command access for VoxelEdit is limited [Currently no commands implemented! :( ]")
                 }
 
                 return@runTaskAsynchronously
@@ -766,10 +778,7 @@ class CommandHandler : BukkitCommand("voxeledit") {
                 Logger.exception(e)
                 return@runTaskAsynchronously
             }
-        })
-
-        return true
-    }
+     */
 
     private fun _parse(input: String, assert: Boolean = true): Int {
         val output = Integer.parseInt(input)
