@@ -1,6 +1,7 @@
 package de.sakul6499.voxeledit
 
 import de.framework.logger.Logger
+import de.sakul6499.voxeledit.command.GetCommandOrNull
 import de.sakul6499.voxeledit.mesh.MeshHandler
 import org.bukkit.ChatColor
 import org.bukkit.entity.Player
@@ -45,10 +46,64 @@ object VEMode : Listener {
                 // "move" -> n w e s u d
 
                 // sphere|s <radius> <blockName:blockDataIndex;...>
-                    "sphere", "s" -> {
-                        if (split.size <= 2) {
-                            println("Invalid syntax ...")
-                            return
+
+//                    "sphere", "s" -> {
+//                        if (split.size <= 2) {
+//                            println("Invalid syntax ...")
+//                            return
+//                        }
+//
+//                        assistMap.removeIf { (first) -> first == it }
+//                        assistMap.add(Triple(it, it.location.toVector(), event.message))
+//
+//                        val radius: Int = try {
+//                            val i = Integer.parseInt(split[1]); if (i <= 0) {
+//                                it.sendMessage("Radius must be greater than zero!"); return
+//                            } else i
+//                        } catch (e: NumberFormatException) {
+//                            it.sendMessage("Radius must be a number!"); return
+//                        }
+//
+//                        Logger.debug("Assisting: $it -> ${event.message}")
+//                        val mesh = MeshHandler.createMesh(it.uniqueId)
+//
+//                        var vecs = arrayOf<Vector>()
+//                        // ABSTRACT MATH
+//                        val midPoint = event.player.location.toVector()
+//                        val w = event.player.world
+//
+//                        var yBegin: Int = midPoint.blockY - radius
+//                        var yEnd: Int = midPoint.blockY + radius
+//
+//                        val xBegin: Int = midPoint.blockX - radius
+//                        val xEnd: Int = midPoint.blockX + radius
+//
+//                        val zBegin: Int = midPoint.blockZ - radius
+//                        val zEnd: Int = midPoint.blockZ + radius
+//
+//                        if (yBegin > 255) yBegin = 255
+//                        if (yEnd < 0) yEnd = 0
+//
+//                        for (y in yEnd downTo yBegin) {
+//                            for (x in xBegin..xEnd) {
+//                                for (z in zBegin..zEnd) {
+//                                    val currentPosition = Vector(x, y, z)
+//                                    val distance = midPoint.distance(currentPosition).toInt()
+//                                    if (distance == radius) vecs += currentPosition
+//                                }
+//                            }
+//                        }
+//                        // ABSTRACT MATH
+//
+//                        mesh.update(w, vecs)
+//                    }
+                    else -> {
+                        val command = GetCommandOrNull(split[0])
+                        if (command == null) {
+                            it.sendMessage("No assist mapping for entry / input found!")
+                            it.performCommand("/# ${event.message}")
+
+                            return@forEach
                         }
 
                         assistMap.removeIf { (first) -> first == it }
@@ -94,10 +149,8 @@ object VEMode : Listener {
                         // ABSTRACT MATH
 
                         mesh.update(w, vecs)
-                    }
-                    else -> {
-                        it.sendMessage("No assist mapping for entry / input found!")
-                        it.performCommand("/# ${event.message}")
+
+//                        command.invoke(split.toTypedArray().copyOfRange(1, split.size), event.player)
                     }
                 }
             } else {

@@ -1,9 +1,8 @@
 package de.sakul6499.voxeledit.command
 
 import org.bukkit.command.CommandSender
-import java.util.*
 
-class CommandData(label: Array<String>, val invoke: (args: Array<out String>, sender: CommandSender) -> Unit) {
+open class Command(label: Array<String>, private val full_command: String = "", val invoke: (args: Array<out String>, sender: CommandSender) -> Unit) {
 
     var label: Array<String>
         private set
@@ -15,7 +14,5 @@ class CommandData(label: Array<String>, val invoke: (args: Array<out String>, se
         }
     }
 
-    override fun toString(): String {
-        return "CommandData(invoke=$invoke, label=${Arrays.toString(label)})"
-    }
+    override fun toString(): String = full_command
 }
