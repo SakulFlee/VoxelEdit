@@ -2,7 +2,7 @@ package de.sakul6499.voxeledit.command
 
 import org.bukkit.command.CommandSender
 
-open class Command(label: Array<String>, private val syntax: String, private val help: String, val invoke: (args: Array<out String>, sender: CommandSender) -> Unit) {
+open class Command(label: Array<String>, private val syntax: String, private val help: String, private val _invoke: (args: Array<out String>, sender: CommandSender) -> CommandReturn) {
 
     var label: Array<String>
         private set
@@ -11,6 +11,13 @@ open class Command(label: Array<String>, private val syntax: String, private val
         this.label = arrayOf()
         label.forEach {
             this.label += it.toLowerCase()
+        }
+    }
+
+    open fun invoke(args: Array<out String>, sender: CommandSender) {
+        if(_invoke(args, sender) == CommandReturn.FAILED) {
+            sender.sendMessage("Invalid syntax!")
+            sender.sendMessage(" -> $syntax")
         }
     }
 

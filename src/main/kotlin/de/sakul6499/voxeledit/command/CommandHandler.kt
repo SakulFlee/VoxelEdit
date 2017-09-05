@@ -69,7 +69,7 @@ class CommandHandler : BukkitCommand("voxeledit") {
                         sender.sendMessage("tool (bind|b)|(unbind|u) (left|l)|(right|r) <command>")
 
                         sender.sendMessage("SETTINGS")
-                        sender.sendMessage("bps <BPS>")
+                        sender.sendMessage("bps <BlocksPerSecond>")
                         sender.sendMessage("mode [enter VE-Mode]")
 
                         return@runTaskAsynchronously
