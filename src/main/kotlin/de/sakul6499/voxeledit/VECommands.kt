@@ -1,10 +1,13 @@
 @file:Suppress("UNUSED")
 
-package de.sakul6499.voxeledit.command
+package de.sakul6499.voxeledit
 
 import de.framework.api.Bundle
-import de.sakul6499.voxeledit.VEMode
-import de.sakul6499.voxeledit.VETool
+import de.framework.command.Command
+import de.framework.command.CommandReturn
+import de.framework.command.Commands
+import de.framework.command.PlayerOnlyCommand
+import de.framework.logger.Logger
 import de.sakul6499.voxeledit.clipboard.*
 import de.sakul6499.voxeledit.task.*
 import org.bukkit.Material
@@ -13,40 +16,21 @@ import org.bukkit.entity.Player
 import org.bukkit.util.Vector
 import kotlin.reflect.full.memberProperties
 
-fun GetCommand(label: String): Command = GetCommandOrNull(label) ?: throw NullPointerException("Command '$label' not found!")
-fun GetCommandOrNull(label: String): Command? = GetAllCommands().find { it.label.any { it == label.toLowerCase() } }
+object VECommands {
+    fun initCommands() {
+        Commands.injectCommandWrapper("VoxelEdit", "@Sakul6499 | Lukas", "voxeledit", "VoxelEdit - Edit the Voxels!", "/voxeledit | /ve | /# | //voxeledit | //ve | //# [use 'help' for more!]", listOf("ve", "/voxeledit", "/ve", "#", "/#"))
 
-fun GetAllCommands(): Array<Command> {
-    var output: Array<Command> = arrayOf()
-    Commands::class.memberProperties.forEach {
-        val prop = it.get(Commands)
-        if (prop is Command) {
-            output += prop
+        VECommands::class.memberProperties.forEach {
+            val prop = it.get(VECommands)
+            if (prop is Command) {
+                Logger.debug("Added command: $prop")
+                Commands.addCommands("VoxelEdit", prop)
+            }
         }
     }
-    return output
-}
 
-fun GetFullHelp(): String {
-    var output = ""
-    GetAllCommands().forEach { output += "$it\n" }
-    return output
-}
-
-fun ValidateCommands(): Boolean {
-    var success = true
-    var labels = arrayOf<String>()
-    GetAllCommands().forEach { cmd ->
-        if (labels.any { label -> cmd.label.any { it == label } }) success = false
-
-        labels += cmd.label
-    }
-    return success
-}
-
-object Commands {
     // Shapes
-    val sphere = PlayerOnlyCommand(arrayOf("sphere", "s"), "sphere|s <radius> <blockName:blockDataIndex;...> (hollow)", "Places blocks in a sphere by given") { args, player ->
+    val sphere = PlayerOnlyCommand(arrayOf("sphere", "s"), "sphere|s <radius> <blockName:blockDataIndex;...> (hollow)", "Places blocks in injectCommandWrapper sphere by given") { args, player ->
         if (args.size <= 1) return@PlayerOnlyCommand CommandReturn.FAILED
 
         val loc = player.location
@@ -78,7 +62,7 @@ object Commands {
         } else CommandReturn.FAILED_SILENT
     }
 
-    val voxel = PlayerOnlyCommand(arrayOf("voxel", "v"), "voxel|v <radius> <blockName:blockDataIndex;...> (hollow)", "Places blocks in a voxel (cube) by given radius") { args, player ->
+    val voxel = PlayerOnlyCommand(arrayOf("voxel", "v"), "voxel|v <radius> <blockName:blockDataIndex;...> (hollow)", "Places blocks in injectCommandWrapper voxel (cube) by given radius") { args, player ->
         if (args.size <= 1) return@PlayerOnlyCommand CommandReturn.FAILED
 
         val loc = player.location
@@ -157,7 +141,7 @@ object Commands {
         } else CommandReturn.FAILED_SILENT
     }
 
-    val tower = PlayerOnlyCommand(arrayOf("tower", "t"), "tower|t <radius> <up> (<down>) <blockName:blockDataIndex;...> (hollow)", "Places a tower (voxel / cubic cylinder) by given up and down values") { args, player ->
+    val tower = PlayerOnlyCommand(arrayOf("tower", "t"), "tower|t <radius> <up> (<down>) <blockName:blockDataIndex;...> (hollow)", "Places injectCommandWrapper tower (voxel / cubic cylinder) by given up and down values") { args, player ->
         if (args.size <= 2) return@PlayerOnlyCommand CommandReturn.FAILED
 
         val loc = player.location
@@ -391,7 +375,7 @@ object Commands {
     }
 
     // Tasks
-    val tasks = Command(arrayOf("tasks", "ta"), "task|ta (<player>)", "List tasks for a specific player (or yourself)") { args, sender ->
+    val tasks = Command(arrayOf("tasks", "ta"), "task|ta (<player>)", "List tasks for injectCommandWrapper specific player (or yourself)") { args, sender ->
         return@Command if (sender is Player) {
             if (args.isEmpty()) {
                 sender.sendMessage("Tasks for @${sender.name}:")
@@ -421,7 +405,7 @@ object Commands {
         }
     }
 
-    val cancel = Command(arrayOf("cancel", "c"), "cancel|c (<player>) <task id>", "Cancels a task with a specific ID (for a specific player)") { args, sender ->
+    val cancel = Command(arrayOf("cancel", "c"), "cancel|c (<player>) <task id>", "Cancels injectCommandWrapper task with injectCommandWrapper specific ID (for injectCommandWrapper specific player)") { args, sender ->
         if (sender is Player) {
             try {
                 val id = if (args.isEmpty()) {
@@ -448,7 +432,7 @@ object Commands {
                 sender.sendMessage("Tip: use 'tasks' to view your tasks!")
                 return@Command CommandReturn.FAILED_SILENT
             } catch (e: NumberFormatException) {
-                sender.sendMessage("The task id must be a number!")
+                sender.sendMessage("The task id must be injectCommandWrapper number!")
                 sender.sendMessage("Tip: use 'tasks' to view your tasks!")
                 return@Command CommandReturn.FAILED_SILENT
             }
@@ -459,7 +443,7 @@ object Commands {
         }
     }
 
-    val undo = Command(arrayOf("undo", "u"), "undo|u (<player>) <ID>", "Undo a task with a specific ID (for a specific Player)") { args, sender ->
+    val undo = Command(arrayOf("undo", "u"), "undo|u (<player>) <ID>", "Undo injectCommandWrapper task with injectCommandWrapper specific ID (for injectCommandWrapper specific Player)") { args, sender ->
         if (sender is Player) {
             try {
                 val id = if (args.isEmpty()) {
@@ -484,7 +468,7 @@ object Commands {
                 sender.sendMessage("Tip: use 'tasks' to view your tasks!")
                 return@Command CommandReturn.FAILED_SILENT
             } catch (e: NumberFormatException) {
-                sender.sendMessage("The task id must be a number!")
+                sender.sendMessage("The task id must be injectCommandWrapper number!")
                 sender.sendMessage("Tip: use 'tasks' to view your tasks!")
                 return@Command CommandReturn.FAILED_SILENT
             }
@@ -505,24 +489,24 @@ object Commands {
         try {
             val bps = fetchInt(args[0], sender)
             if (bps == null || bps <= 0) {
-                sender.sendMessage("The BlocksPerSecond value must be a integer and not be lower or equal zero!")
+                sender.sendMessage("The BlocksPerSecond value must be injectCommandWrapper integer and not be lower or equal zero!")
                 return@Command CommandReturn.FAILED_SILENT
             }
 
             Tasks.BlocksPerSecond = bps
             return@Command CommandReturn.SUCCESS
         } catch (e: NumberFormatException) {
-            sender.sendMessage("The BlocksPerSecond value must be a number!")
+            sender.sendMessage("The BlocksPerSecond value must be injectCommandWrapper number!")
             return@Command CommandReturn.FAILED_SILENT
         }
     }
 
-    val mode = PlayerOnlyCommand(arrayOf("mode", "m"), "mode", "Enters the VE-Mode [Is a try out totally worth it ;)]") { args, player ->
+    val mode = PlayerOnlyCommand(arrayOf("mode", "m"), "mode", "Enters the VE-Mode [Is injectCommandWrapper try out totally worth it ;)]") { args, player ->
         VEMode.handlePlayer(player)
         return@PlayerOnlyCommand CommandReturn.SUCCESS
     }
 
-    val tool = PlayerOnlyCommand(arrayOf("tool", "to"), "tool|to (bind|b)|(unbind|u) (left|l)|(right|r) (<command>)", "Binds a command to an item, which then will be executed each time you click right or left. [For VoxelEdit commands the /# (or any other) can be left out!]") { args, player ->
+    val tool = PlayerOnlyCommand(arrayOf("tool", "to"), "tool|to (bind|b)|(unbind|u) (left|l)|(right|r) (<command>)", "Binds injectCommandWrapper command to an item, which then will be executed each time you click right or left. [For VoxelEdit command the /# (or any other) can be left out!]") { args, player ->
         if (args.size <= 2) return@PlayerOnlyCommand CommandReturn.FAILED
 
         val bind: Boolean = when {
@@ -535,7 +519,7 @@ object Commands {
             "left", "l" -> {
                 if (bind) {
                     if (args.size < 2) {
-                        player.sendMessage("You need to provide a command!")
+                        player.sendMessage("You need to provide injectCommandWrapper command!")
                         return@PlayerOnlyCommand CommandReturn.FAILED
                     }
 
@@ -552,7 +536,7 @@ object Commands {
             "right", "r" -> {
                 if (bind) {
                     if (args.size < 2) {
-                        player.sendMessage("You need to provide a command!")
+                        player.sendMessage("You need to provide injectCommandWrapper command!")
                         return@PlayerOnlyCommand CommandReturn.FAILED
                     }
 
@@ -569,67 +553,66 @@ object Commands {
             else -> return@PlayerOnlyCommand CommandReturn.FAILED
         }
     }
-}
 
+    private fun fetchInt(l: String, sender: CommandSender? = null, checkBoundary: Boolean = true): Int? = try {
+        val i = Integer.parseInt(l)
 
-private fun fetchInt(l: String, sender: CommandSender? = null, checkBoundary: Boolean = true): Int? = try {
-    val i = Integer.parseInt(l)
-
-    if (checkBoundary && i < 0) {
-        sender?.sendMessage("Number must be greater or equal zero!")
+        if (checkBoundary && i < 0) {
+            sender?.sendMessage("Number must be greater or equal zero!")
+            null
+        } else i
+    } catch (e: NumberFormatException) {
+        sender?.sendMessage("Invalid number!")
         null
-    } else i
-} catch (e: NumberFormatException) {
-    sender?.sendMessage("Invalid number!")
-    null
-}
-
-
-private fun fetchMaterials(l: String, sender: CommandSender? = null): Array<Bundle<Material, Byte>>? {
-    var output: Array<Bundle<Material, Byte>> = arrayOf()
-
-    try {
-        val literalMaterials = l.split(";")
-        literalMaterials.forEach {
-            var s = it
-
-            val material: Material
-            var mod: Byte = -1
-
-            val index = s.indexOf(':')
-            if (index > 0) {
-                mod = try {
-                    var i = Integer.parseInt(s.substring(index + 1, s.length))
-                    if (i < 0) {
-                        sender?.sendMessage("The block data index must not be lower than zero! [Setting to zero for '$it']")
-                        i = 0
-                    }
-
-                    i.toByte()
-                } catch (e: NumberFormatException) {
-                    sender?.sendMessage("The block data index must be a number! [Setting to zero for '$it']")
-
-                    0.toByte()
-                }
-                s = s.substring(0, index)
-            }
-
-            try {
-                material = Material.matchMaterial(s)
-                output += Bundle(material, mod)
-            } catch (e: IllegalStateException) {
-                sender?.sendMessage("Malformed material name!")
-
-                return null
-            }
-        }
-    } catch (e: NullPointerException) {
-        sender?.sendMessage("Materials malformed!")
-        return null
     }
 
-    return if (output.isEmpty()) {
-        sender?.sendMessage("Materials must not be empty!")
-        null
-    } else output
+
+    private fun fetchMaterials(l: String, sender: CommandSender? = null): Array<Bundle<Material, Byte>>? {
+        var output: Array<Bundle<Material, Byte>> = arrayOf()
+
+        try {
+            val literalMaterials = l.split(";")
+            literalMaterials.forEach {
+                var s = it
+
+                val material: Material
+                var mod: Byte = -1
+
+                val index = s.indexOf(':')
+                if (index > 0) {
+                    mod = try {
+                        var i = Integer.parseInt(s.substring(index + 1, s.length))
+                        if (i < 0) {
+                            sender?.sendMessage("The block data index must not be lower than zero! [Setting to zero for '$it']")
+                            i = 0
+                        }
+
+                        i.toByte()
+                    } catch (e: NumberFormatException) {
+                        sender?.sendMessage("The block data index must be injectCommandWrapper number! [Setting to zero for '$it']")
+
+                        0.toByte()
+                    }
+                    s = s.substring(0, index)
+                }
+
+                try {
+                    material = Material.matchMaterial(s)
+                    output += Bundle(material, mod)
+                } catch (e: IllegalStateException) {
+                    sender?.sendMessage("Malformed material name!")
+
+                    return null
+                }
+            }
+        } catch (e: NullPointerException) {
+            sender?.sendMessage("Materials malformed!")
+            return null
+        }
+
+        return if (output.isEmpty()) {
+            sender?.sendMessage("Materials must not be empty!")
+            null
+        } else output
+    }
 }

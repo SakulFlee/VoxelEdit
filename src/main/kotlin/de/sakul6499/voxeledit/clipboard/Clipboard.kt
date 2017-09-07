@@ -105,7 +105,7 @@ object Clipboard {
     private fun getEntryPos(player: Player): Quad<Player, Vector, Vector, World>? {
         val entry = pos.firstOrNull { it.first == player }
         if (entry?.second == null || entry.third == null) {
-            player.sendMessage("You do not have clipboard yet (try selecting something) OR a position mismatch occurred!")
+            player.sendMessage("You do not have clipboard yet (try selecting something) OR injectCommandWrapper position mismatch occurred!")
             return null
         }
 
