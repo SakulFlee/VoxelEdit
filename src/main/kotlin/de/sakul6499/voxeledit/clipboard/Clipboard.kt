@@ -64,7 +64,7 @@ object Clipboard {
     }
 
 
-//    fun addInsertion(selectionID: Int, notifier: Player): Int {
+//    fun addInsertion(selectionID: Int, notifier: SQLPlayer): Int {
 //        val selection = selections.firstOrNull { it.id == selectionID } ?: throw IllegalStateException("Selection with id $selectionID not found!")
 //        val insertion = Insertion.fromSelection(selection.selection, notifier.location.toVector(), ++idCounter, notifier)
 //

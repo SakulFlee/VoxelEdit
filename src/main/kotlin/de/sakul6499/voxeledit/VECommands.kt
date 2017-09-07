@@ -3,11 +3,13 @@
 package de.sakul6499.voxeledit
 
 import de.framework.api.Bundle
+import de.framework.api.Permissions
 import de.framework.command.Command
 import de.framework.command.CommandReturn
 import de.framework.command.Commands
 import de.framework.command.PlayerOnlyCommand
 import de.framework.logger.Logger
+import de.framework.player.PlayerRank
 import de.sakul6499.voxeledit.clipboard.*
 import de.sakul6499.voxeledit.task.*
 import org.bukkit.Material
@@ -443,7 +445,7 @@ object VECommands {
         }
     }
 
-    val undo = Command(arrayOf("undo", "u"), "undo|u (<player>) <ID>", "Undo injectCommandWrapper task with injectCommandWrapper specific ID (for injectCommandWrapper specific Player)") { args, sender ->
+    val undo = Command(arrayOf("undo", "u"), "undo|u (<player>) <ID>", "Undo injectCommandWrapper task with injectCommandWrapper specific ID (for injectCommandWrapper specific SQLPlayer)") { args, sender ->
         if (sender is Player) {
             try {
                 val id = if (args.isEmpty()) {
@@ -481,6 +483,13 @@ object VECommands {
 
     // Settings & Other
     val bps = Command(arrayOf("bps"), "bps (<bps>)", "Sets the BlocksPerSecond [ONLY USE IF YOU KNOW WHAT THIS DOES! MISUSE IS NOT A BUG!]") { args, sender ->
+        if (sender is Player) {
+            if (!Permissions.isPermitted(sender.uniqueId, PlayerRank.MASTER_BUILD, PlayerRank.DEVELOPER, PlayerRank.ADMIN)) {
+                println("NOT PERMITTED!")
+                return@Command CommandReturn.FAILED_SILENT
+            }
+        }
+
         if (args.isEmpty()) {
             sender.sendMessage("Current BlocksPerSecond: ${Tasks.BlocksPerSecond}")
             return@Command CommandReturn.SUCCESS
