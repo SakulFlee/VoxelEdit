@@ -1,7 +1,7 @@
 import org.apache.tools.ant.filters.ReplaceTokens
 
 buildscript {
-    ext.kotlin_version = '1.1.4'
+    ext.kotlin_version = '1.2.31'
 
     repositories {
         mavenCentral()
@@ -12,27 +12,14 @@ buildscript {
     }
 }
 
-apply plugin: 'base'
 apply plugin: 'idea'
-apply plugin: 'java'
 apply plugin: 'kotlin'
 
-group = 'de.framework-test'
-version = '0.1b'
+group = 'de.sakul6499.voxeledit'
+version = '0.2b'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
-
-task copyFrameworkPlugin(dependsOn: jar) {
-    doLast {
-        copy {
-           from "$buildDir/libs"
-           into project(':Framework').buildDir.getAbsolutePath() + "/../server/framework-plugins"
-       }
-    }
-
-    mustRunAfter(':Framework:copyPlugins')
-}
 
 idea {
     module {
@@ -57,22 +44,14 @@ repositories {
         name = 'sonatype'
         url = 'https://oss.sonatype.org/content/groups/public/'
     }
-
-    maven {
-        name = 'exposed'
-        url 'http://dl.bintray.com/kotlin/exposed'
-    }
 }
 
 dependencies {
-    compile('org.spigotmc:spigot-api:1.12-R0.1-SNAPSHOT') {
-        transitive = true
-    }
+    compile 'org.spigotmc:spigot-api:1.12-R0.1-SNAPSHOT'
 
-//    compile project(path: ':Framework', configuration: 'api')
     compile project(path: ':Framework')
 
-    compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
 }
 
 compileKotlin {
@@ -87,16 +66,16 @@ compileTestKotlin {
     }
 }
 
-jar {
-    include 'de/sakul6499/**'
-        from('src/main/resources') {
-            include '**'
-    }
-}
+//jar {
+//    include 'de/sakul6499/**'
+//        from('src/main/resources') {
+//            include '**'
+//    }
+//}
 
 /* Version */
 processResources {
-    def version = 'git log -1 HEAD --pretty=format:"%H %aD - %cn >> %s"'.execute().text.trim()
-    println "Building Version: " + version
     filter(ReplaceTokens, tokens: ['version': version])
 }
+
+apply from: 'NovaShare/spigot.gradle'

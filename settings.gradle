@@ -1,4 +1,6 @@
 rootProject.name = 'VoxelEdit'
 
 include ':Framework'
-project(':Framework').projectDir = new File("../Framework")
+include ':NovaShare'
+include ':Keno'
+project(':Keno').projectDir = new File("./NovaShare/Keno")
