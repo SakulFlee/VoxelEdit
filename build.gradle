@@ -47,7 +47,7 @@ repositories {
 }
 
 dependencies {
-    compile 'org.spigotmc:spigot-api:1.12-R0.1-SNAPSHOT'
+    compile 'org.spigotmc:spigot-api:1.12-pre6-SNAPSHOT'
 
     compile project(path: ':Framework')
 
